@@ -1,0 +1,59 @@
+<resources>
+
+    <style name="SplashScreenTheme" parent = "Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_screen_background</item>
+    </style>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="popupMenuStyle">@style/MenuDetailStyle</item>
+        <item name="actionMenuTextColor">@color/mediumgray</item>
+        <item name="android:actionMenuTextColor">@color/mediumgray</item>
+    </style>
+
+    <style name="SearchViewStyle" parent="Widget.AppCompat.SearchView">
+        <item name="android:searchIcon">@drawable/ic_search_white_24dp</item>
+        <item name="android:textSize">10sp</item>
+        <item name="searchHintIcon">@null</item>
+        <item name="queryBackground">@android:color/transparent</item>
+        <item name="android:editTextBackground">@android:color/transparent</item>
+        <item name="android:colorPrimary">@android:color/white</item>
+        <item name="android:colorPrimaryDark">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/white</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="actionMenuTextColor">@color/mediumgray</item>
+        <item name="android:actionMenuTextColor">@color/mediumgray</item>
+    </style>
+
+    <style name="NavMenuStyle">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/darkgray</item>
+    </style>
+
+    <style name="MenuDetailStyle" parent="Widget.AppCompat.PopupMenu.Overflow">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/darkgray</item>
+    </style>
+
+    <style name="AlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:editTextColor">@color/colorAccent</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="titleTextColor">@color/colorPrimary</item>
+    </style>
+
+    <style name="ToolbarTheme" parent="ThemeOverlay.AppCompat.Light">
+        <item name="android:textSize">20sp</item>
+        <item name="android:titleTextColor">#F9F9F3</item>
+        <item name="android:textColor">#F9F9F3</item>
+        <item name="colorControlNormal">#F9F9F3</item>
+        <item name="android:editTextColor">#F9F9F3</item>
+        <item name="android:textColorHint">#CDCDCD</item>
+        <item name="searchViewStyle">@style/SearchViewStyle</item>
+    </style>
+</resources>

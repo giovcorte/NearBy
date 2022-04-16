@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">NearBy</string>
+    <string name="open">Aperto ora</string>
+    <string name="closed">Chiuso ora</string>
+    <string name="opening_hours_title">Orari di apertura</string>
+    <string name="radius_preference_desc">Imposta il raggio entro quale cercare i luoghi di interesse</string>
+</resources>

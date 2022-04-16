@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="../../../../layout/custom_preview.xml" value="0.3527777777777778" />
+        <entry key="app/src/main/res/drawable/arrow_back.xml" value="0.3472222222222222" />
+        <entry key="app/src/main/res/drawable/background_rounded_white.xml" value="0.2005" />
+        <entry key="app/src/main/res/drawable/outline_dns_24.xml" value="0.2315" />
+        <entry key="app/src/main/res/drawable/outline_done_24.xml" value="0.2315" />
+        <entry key="app/src/main/res/drawable/outline_error_outline_24.xml" value="0.2315" />
+        <entry key="app/src/main/res/drawable/outline_local_parking_24.xml" value="0.2315" />
+        <entry key="app/src/main/res/drawable/outline_location_disabled_24.xml" value="0.2315" />
+        <entry key="app/src/main/res/drawable/outline_sensors_off_24.xml" value="0.2315" />
+        <entry key="app/src/main/res/drawable/outline_signal_cellular_connected_no_internet_0_bar_24.xml" value="0.2315" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.2572463768115942" />
+        <entry key="app/src/main/res/layout/error_view.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/fragment_detail.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/fragment_home.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/fragment_list.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/fragment_settings.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_calendar.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_card_list.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_detail.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_map.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_nearby_place.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_photo.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_review.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/item_simple_place.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_spinner.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_text_checkbox.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_text_seek_bar.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/menu/drawer_menu.xml" value="0.365625" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="11" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>

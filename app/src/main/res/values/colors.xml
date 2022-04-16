@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#2565AE</color>
+    <color name="colorPrimaryDark">#0F5298</color>
+    <color name="colorAccent">#3c99DC</color>
+
+    <color name="placeholder_bg">#dddddd</color>
+    <color name="black">#0c0c0c</color>
+    <color name="description">#1a1a1a</color>
+    <color name="darkgray">#333333</color>
+    <color name="mediumgray">#767676</color>
+    <color name="ghostwhite">#F7F7FD</color>
+    <color name="white_base">#ffffff</color>
+    <color name="lightgray">#afafaf</color>
+    <color name="list_gray_background">#CFD8DC</color>
+
+    <color name="foot">#009FC0</color>
+    <color name="car">#FD9A24</color>
+
+    <color name="green">#58bd95</color>
+    <color name="orange">#ff8b3d</color>
+    <color name="blue">#6bcae2</color>
+    <color name="yellow">#FEDC56</color>
+
+    <color name="semi_transparent_background_color">#4D000000</color>
+
+    <color name="one">#D32F2F</color>
+    <color name="two">#E64A19</color>
+    <color name="three">#F57C00</color>
+    <color name="four">#FFA000</color>
+    <color name="five">#FBC02D</color>
+    <color name="six">#AFB42B</color>
+    <color name="seven">#AFB42B</color>
+
+</resources>

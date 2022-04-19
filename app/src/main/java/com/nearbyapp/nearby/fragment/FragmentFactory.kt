@@ -11,6 +11,7 @@ class FragmentFactory {
                 "near" -> return NearByFragment()
                 "detail" -> return DetailFragment()
                 "settings" -> return SettingsFragment()
+                "saved" -> return SavedPlacesFragment()
             }
             return Fragment()
         }

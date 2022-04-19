@@ -1,14 +1,17 @@
 package com.nearbyapp.nearby.fragment
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.view.*
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import com.nearbyapp.nearby.R
 import com.nearbyapp.nearby.components.Status
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.DetailViewModel
 import kotlin.properties.Delegates
+
 
 class DetailFragment: ListFragment() {
 
@@ -33,6 +36,7 @@ class DetailFragment: ListFragment() {
         lat = clipboard.getData("lat") as Double
         lng = clipboard.getData("lng") as Double
         navigationManager.updateToolbar(name)
+        setHasOptionsMenu(true)
     }
 
     override fun doOnViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -55,6 +59,35 @@ class DetailFragment: ListFragment() {
         viewModel.loading.observe(viewLifecycleOwner) { loading ->
             loading(loading)
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.menu_detail, menu)
+        val submenu: Menu = menu.getItem(0).subMenu
+        for (i in 0 until submenu.size()) {
+            val item: MenuItem = submenu.getItem(i)
+            val title = SpannableString(submenu.getItem(i).title.toString())
+            title.setSpan(
+                ForegroundColorSpan(
+                    ContextCompat.getColor(
+                        requireActivity(),
+                        R.color.mediumgray
+                    )
+                ), 0, title.length, 0
+            )
+            item.title = title
+        }
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val itemId: Int = item.itemId
+        if (itemId == R.id.save) {
+            viewModel.saveDetails()
+            submitDownload(viewModel.saveImage())
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
 

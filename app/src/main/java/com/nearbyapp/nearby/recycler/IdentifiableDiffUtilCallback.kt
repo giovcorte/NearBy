@@ -1,4 +1,4 @@
-package com.nearbyapp.nearby.components
+package com.nearbyapp.nearby.recycler
 
 import androidx.recyclerview.widget.DiffUtil
 

@@ -23,6 +23,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
 import com.nearbyapp.nearby.components.Clipboard
+import com.nearbyapp.nearby.components.DownloadManagerHelper
 import com.nearbyapp.nearby.components.PreferencesManager
 import com.nearbyapp.nearby.components.Status
 import com.nearbyapp.nearby.model.*
@@ -32,12 +33,24 @@ import com.nearbyapp.nearby.model.detail.Review
 import com.nearbyapp.nearby.model.nearby.NearbyPlace
 import com.nearbyapp.nearby.model.nearby.Photo
 import com.nearbyapp.nearby.navigation.NavigationManager
+import com.nearbyapp.nearby.repository.RepositoryImpl
 import com.nearbyapp.nearby.widget.*
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.CoroutineDispatcher
 
 
 @SuppressLint("unused")
 object BindingMethods {
+
+    @JvmStatic
+    @BindingMethod
+    fun bindNearbyPlaceWrapper(@View view: ItemNearbyPlace?, @Data data: NearbyPlaceWrapper?, @Inject downloadManagerHelper: DownloadManagerHelper) {
+        safeLet(view, data) {v, wrapper ->
+            downloadManagerHelper.getImage(wrapper.detail.place_id)?.let {
+                Picasso.get().load(it).fit().centerCrop().into(v.image)
+            }
+        }
+    }
 
     @JvmStatic
     @BindingMethod
@@ -120,7 +133,7 @@ object BindingMethods {
     @JvmStatic
     @BindingMethod
     fun bindItemDetail(@View view: ItemDetail?, @Data data: Detail?) {
-
+        val detail = data as Detail
     }
 
     @JvmStatic

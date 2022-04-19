@@ -7,9 +7,8 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.databinding.databinding.adapter.GenericRecyclerViewAdapter
 import com.nearbyapp.nearby.R
-import com.nearbyapp.nearby.components.GenericUpdatableRecyclerViewAdapter
+import com.nearbyapp.nearby.recycler.GenericUpdatableRecyclerViewAdapter
 import com.nearbyapp.nearby.components.Status
 import com.nearbyapp.nearby.widget.ErrorView
 
@@ -84,6 +83,10 @@ abstract class ListFragment: BaseFragment() {
                 show(recyclerView)
             }
         }
+    }
+
+    fun getRecyclerView(): RecyclerView {
+        return recyclerView
     }
 
     fun clean() {

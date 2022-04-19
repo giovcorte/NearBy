@@ -1,9 +1,12 @@
 package com.nearbyapp.nearby
 
+import android.app.AlertDialog
+import android.app.DownloadManager
 import android.content.IntentFilter
 import android.location.LocationManager
 import android.os.Bundle
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
@@ -11,9 +14,8 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.navigation.NavigationView
-import com.nearbyapp.nearby.components.Clipboard
-import com.nearbyapp.nearby.components.GPSReceiver
-import com.nearbyapp.nearby.components.PreferencesManager
+import com.nearbyapp.nearby.components.*
+import com.nearbyapp.nearby.components.DownloadReceiver.Handler
 import com.nearbyapp.nearby.navigation.FragmentManagerHelper
 import com.nearbyapp.nearby.navigation.NavigationManager
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
@@ -25,13 +27,14 @@ class MainActivity : AppCompatActivity() {
     lateinit var navigationManager: NavigationManager
     lateinit var clipboard: Clipboard
     lateinit var preferencesManager: PreferencesManager
+    lateinit var downloadManagerHelper: DownloadManagerHelper
 
     private lateinit var drawer: DrawerLayout
     private lateinit var toolbar: Toolbar
 
     private lateinit var viewModel: ActivityViewModel
 
-    private val locationSensorCallBack = object : GPSReceiver.LocationSensorCallBack {
+    private val gpsReceiver = GPSReceiver(object : GPSReceiver.LocationSensorCallBack {
         override fun enabled() {
             viewModel.postLocationValue(true)
         }
@@ -40,15 +43,16 @@ class MainActivity : AppCompatActivity() {
             viewModel.postLocationValue(false)
         }
 
-    }
+    })
 
-    private val gpsReceiver = GPSReceiver(locationSensorCallBack)
+    private val downloadReceiver = DownloadReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         fragmentManagerHelper = FragmentManagerHelper(R.id.host, supportFragmentManager)
         navigationManager = NavigationManager(this, fragmentManagerHelper)
         clipboard = (application as AppController).clipboard
-        preferencesManager = (application as AppController).preferencesManager!!
+        preferencesManager = (application as AppController).preferencesManager
+        downloadManagerHelper = (application as AppController).downloadMnagerHelper
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -63,7 +67,7 @@ class MainActivity : AppCompatActivity() {
             selectDrawerItem(menuItem)
             true
         }
-
+        setSupportActionBar(toolbar)
         navigationManager.initNavigation("home")
     }
 
@@ -71,11 +75,13 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         registerReceiver(gpsReceiver, IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION))
         registerReceiver(gpsReceiver, IntentFilter(LocationManager.MODE_CHANGED_ACTION))
+        registerReceiver(downloadReceiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
     }
 
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(gpsReceiver)
+        unregisterReceiver(downloadReceiver)
     }
 
     override fun onBackPressed() {
@@ -99,7 +105,31 @@ class MainActivity : AppCompatActivity() {
             menuItem.isChecked = false
             navigationManager.navigateTo("settings")
             drawer.closeDrawers()
+        } else if (itemId == R.id.saved) {
+            menuItem.isChecked = false
+            navigationManager.navigateTo("saved")
+            drawer.closeDrawers()
         }
+    }
+
+    fun submitDownloadHandler(ref: DownloadManagerHelper.DownloadRef) {
+        downloadReceiver.submitHandler(object: Handler(ref) {
+            override fun onDownloadCompleted() {
+                Toast.makeText(this@MainActivity, "Salvataggio effettuato", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    fun dialog(title: String, message: String) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(title)
+        builder.setMessage(message)
+            .setPositiveButton(
+                "OK"
+            ) { dialog, _ ->
+                dialog.dismiss()
+            }
+        builder.create().show()
     }
 
 }

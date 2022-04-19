@@ -11,33 +11,9 @@
 
         <menu>
             <item
-                android:icon="@drawable/ic_room_black_36dp"
-                android:iconTint="@color/mediumgray"
-                android:id="@+id/open_googlemaps"
-                android:title="GoogleMaps"
+                android:id="@+id/save"
+                android:title="Salva"
                 tools:ignore="HardcodedText" />
-
-            <item
-                android:iconTint="@color/mediumgray"
-                android:id="@+id/open_navigator"
-                android:icon="@drawable/ic_explore_black_36dp"
-                android:title="Navigatore"
-                tools:ignore="HardcodedText" />
-
-            <item
-                android:iconTint="@color/mediumgray"
-                android:icon="@drawable/ic_call_black_36dp"
-                android:id="@+id/call"
-                android:title="Chiama"
-                tools:ignore="HardcodedText" />
-
-            <item
-                android:iconTint="@color/mediumgray"
-                android:icon="@drawable/ic_public_black_36dp"
-                android:id="@+id/website"
-                android:title="Sito web"
-                tools:ignore="HardcodedText" />
-
         </menu>
 
     </item>

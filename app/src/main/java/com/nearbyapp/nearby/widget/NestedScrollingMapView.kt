@@ -21,10 +21,6 @@ class NestedScrollingMapView : MapView {
         context!!, attrs!!, defStyle
     )
 
-    fun setTwoFingerScroll(twoFingerScroll: Boolean) {
-        this.twoFingerScroll = twoFingerScroll
-    }
-
     override fun getMapAsync(callback: OnMapReadyCallback) {
         super.getMapAsync { googleMap: GoogleMap? ->
             map = googleMap

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.databinding.databinding.IData
 import com.google.android.gms.maps.model.PolylineOptions
 import com.nearbyapp.nearby.AppController
+import com.nearbyapp.nearby.components.DownloadManagerHelper
 import com.nearbyapp.nearby.components.ResponseWrapper
 import com.nearbyapp.nearby.converters.PolylineParser.parsePolylineOptions
 import com.nearbyapp.nearby.model.ListWrapper
@@ -21,6 +22,7 @@ import org.json.JSONObject
 class DetailViewModel(application: Application): BaseViewModel(application) {
 
     private var job: Job? = null
+    var detail: Detail? = null
 
     val details: MutableLiveData<MutableList<IData>> = MutableLiveData()
 
@@ -29,6 +31,7 @@ class DetailViewModel(application: Application): BaseViewModel(application) {
         job = viewModelScope.launch {
             when (val response = repository.getPlaceDetail(id)) {
                 is ResponseWrapper.Success -> {
+                    detail = response.value?.detail
                     val placeLat = response.value?.detail?.geometry?.location?.lat
                     val placeLng = response.value?.detail?.geometry?.location?.lng
                     val polyline = getPolyline(repository.getPolyline(placeLat!!, placeLng!!, lat, lng))
@@ -50,6 +53,18 @@ class DetailViewModel(application: Application): BaseViewModel(application) {
         }
     }
 
+    fun saveDetails() {
+        detail?.let {
+            job = viewModelScope.launch {
+                repository.savePlaceDetail(it)
+            }
+        }
+    }
+
+    fun saveImage(): DownloadManagerHelper.DownloadRef {
+        return downloadManagerHelper.downloadImage(detail)
+    }
+
     private fun getPolyline(response: ResponseWrapper<JSONObject?>): PolylineOptions? {
         return when(response) {
             is ResponseWrapper.Success -> {
@@ -61,14 +76,14 @@ class DetailViewModel(application: Application): BaseViewModel(application) {
 
     private fun getImages(detail: Detail) : IData? {
         detail.photos?.also {
-            return ListWrapper(detail.photos.toMutableList(), true)
+            return ListWrapper(it.toMutableList(), true)
         }
         return null
     }
 
     private fun getReviews(detail: Detail): IData? {
         detail.reviews?.let {
-            return ListWrapper(detail.reviews.mapIndexed { i, r ->
+            return ListWrapper(it.mapIndexed { i, r ->
                 r.page = (i + 1).toString()
                 r
             }.toMutableList(), true)

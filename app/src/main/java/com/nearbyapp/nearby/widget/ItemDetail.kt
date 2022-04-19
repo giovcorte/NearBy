@@ -13,7 +13,7 @@ import com.nearbyapp.nearby.R
 @BindableView
 class ItemDetail : ConstraintLayout, IView {
 
-    @BindWith(paths = ["Detail.name:String"])
+    @BindWith(paths = ["Detail.place_name:String"])
     var name: TextView
     @BindWith(paths = ["Detail.formatted_address:String"])
     var address: TextView

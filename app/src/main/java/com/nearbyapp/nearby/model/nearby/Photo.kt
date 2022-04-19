@@ -14,12 +14,8 @@ data class Photo (
 ): IData {
 	val link: String
 		get() {
-			return getUrl()
+			return "https://maps.googleapis.com/maps/api/place/photo?maxwidth=$width&photoreference=$photo_reference&key=AIzaSyA6H30gsKS5UGyR30_CxE1TygjPup6wyOM"
 		}
-
-	fun getUrl(): String{
-		return "https://maps.googleapis.com/maps/api/place/photo?maxwidth=$width&photoreference=$photo_reference&key=AIzaSyA6H30gsKS5UGyR30_CxE1TygjPup6wyOM"
-	}
 
 	override fun name(): String {
 		return "Photo"

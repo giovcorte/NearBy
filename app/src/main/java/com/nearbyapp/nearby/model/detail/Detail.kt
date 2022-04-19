@@ -1,5 +1,8 @@
 package com.nearbyapp.nearby.model.detail
 
+import android.os.Environment
+import android.os.Environment.DIRECTORY_DOWNLOADS
+import androidx.room.*
 import com.databinding.annotations.BindableObject
 import com.databinding.databinding.IData
 import com.google.gson.annotations.SerializedName
@@ -7,25 +10,34 @@ import com.nearbyapp.nearby.model.ListWrapper
 import com.nearbyapp.nearby.model.nearby.Geometry
 import com.nearbyapp.nearby.model.nearby.Photo
 import com.nearbyapp.nearby.widget.ItemDetail
+import java.io.File
 
+@Entity
 @BindableObject(view = ItemDetail::class)
 data class Detail (
-
-    @SerializedName("address_components") val address_components : List<AddressComponents>,
-    @SerializedName("formatted_address") val formatted_address : String,
-    @SerializedName("formatted_phone_number") val formatted_phone_number : String,
-    @SerializedName("geometry") val geometry : Geometry?,
-    @SerializedName("name") val name : String,
-    @SerializedName("opening_hours") val opening_hours : OpeningHours?,
-    @SerializedName("photos") val photos : List<Photo>?,
-    @SerializedName("place_id") val place_id : String,
-    @SerializedName("price_level") val price_level : Int,
-    @SerializedName("rating") val rating : Double?,
-    @SerializedName("reviews") val reviews : List<Review>?
+    @SerializedName("formatted_address") @ColumnInfo(name = "address") var formatted_address : String,
+    @SerializedName("formatted_phone_number") @ColumnInfo var formatted_phone_number : String = "",
+    @SerializedName("geometry") @ColumnInfo var geometry : Geometry? = null,
+    @SerializedName("name") @ColumnInfo var place_name : String,
+    @SerializedName("opening_hours") @Embedded var opening_hours : OpeningHours?,
+    @SerializedName("photos") @ColumnInfo var photos : List<Photo>?,
+    @SerializedName("place_id") @PrimaryKey var place_id : String,
+    @SerializedName("price_level") @ColumnInfo(name = "price") var price_level : Int,
+    @SerializedName("rating") @ColumnInfo var rating : Double?,
+    @SerializedName("reviews") @ColumnInfo var reviews : List<Review>?
 ) : IData {
+
     override fun name(): String {
         return "Detail"
     }
+
+    val thumbnail: String?
+        get() {
+            photos?.let {
+                return it.first().link
+            }
+            return null
+        }
 
     val rating_text: String
         get() {

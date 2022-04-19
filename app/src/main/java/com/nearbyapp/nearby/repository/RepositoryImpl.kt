@@ -3,6 +3,7 @@ package com.nearbyapp.nearby.repository
 import com.nearbyapp.nearby.BuildConfig
 import com.nearbyapp.nearby.components.ResponseWrapper
 import com.nearbyapp.nearby.components.Status
+import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.model.detail.DetailResponse
 import com.nearbyapp.nearby.model.nearby.NearbySearchResponse
 import kotlinx.coroutines.CoroutineDispatcher
@@ -14,7 +15,8 @@ import java.io.IOException
 
 class RepositoryImpl(
     private val placesService: PlacesService,
-    private val polylineService: PolylineService
+    private val polylineService: PolylineService,
+    private val placesDAO: PlacesDAO
 ) : Repository {
 
     var serviceErrorCallBack: Repository.ServiceCallBack? = null
@@ -39,6 +41,22 @@ class RepositoryImpl(
         return safeApiCall(Dispatchers.IO) {
             polylineService.getPolyline("$lat,$lng", "$lat1,$lng1", "walking", BuildConfig.GOOGLE_API_KEY)
         }
+    }
+
+    suspend fun getStoredPlaces(): List<Detail> {
+        return placesDAO.getAllPlaces()
+    }
+
+    suspend fun getStoredPlace(id: String): Detail {
+        return placesDAO.getPlace(id)
+    }
+
+    suspend fun savePlaceDetail(detail: Detail) {
+        placesDAO.insertDetail(detail)
+    }
+
+    suspend fun deletePlaceDetail(id: String) {
+        return placesDAO.deleteDetail(id)
     }
 
     private suspend fun <T> safeApiCall(dispatcher: CoroutineDispatcher, apiCall: suspend () -> T): ResponseWrapper<T> {

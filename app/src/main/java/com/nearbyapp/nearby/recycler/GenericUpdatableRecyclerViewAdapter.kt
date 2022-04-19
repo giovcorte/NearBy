@@ -1,4 +1,4 @@
-package com.nearbyapp.nearby.components
+package com.nearbyapp.nearby.recycler
 
 import androidx.recyclerview.widget.DiffUtil
 import com.databinding.databinding.IAdapterDataBinding
@@ -15,9 +15,11 @@ class GenericUpdatableRecyclerViewAdapter(
 ) {
 
     fun update(newList: MutableList<IData>) {
-        val diffResult = DiffUtil.calculateDiff(IdentifiableDiffUtilCallback(
+        val diffResult = DiffUtil.calculateDiff(
+            IdentifiableDiffUtilCallback(
             getItems().map { it as Identifiable }.toMutableList(),
-            newList.map { it as Identifiable }.toMutableList()))
+            newList.map { it as Identifiable }.toMutableList())
+        )
         getItems().clear()
         getItems().addAll(newList)
         diffResult.dispatchUpdatesTo(this)

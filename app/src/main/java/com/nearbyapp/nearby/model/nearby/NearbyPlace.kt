@@ -3,7 +3,7 @@ package com.nearbyapp.nearby.model.nearby
 import com.databinding.annotations.BindableObject
 import com.databinding.databinding.IData
 import com.google.gson.annotations.SerializedName
-import com.nearbyapp.nearby.components.Identifiable
+import com.nearbyapp.nearby.recycler.Identifiable
 import com.nearbyapp.nearby.model.detail.OpeningHours
 import com.nearbyapp.nearby.widget.ItemNearbyPlace
 
@@ -16,8 +16,8 @@ data class NearbyPlace (
     @SerializedName("icon_background_color") val icon_background_color : String,
     @SerializedName("icon_mask_base_uri") val icon_mask_base_uri : String,
     @SerializedName("name") val name : String,
-    @SerializedName("opening_hours") val opening_hours : OpeningHours,
-    @SerializedName("photos") val photos : List<Photo>,
+    @SerializedName("opening_hours") val opening_hours : OpeningHours?,
+    @SerializedName("photos") val photos : List<Photo>?,
     @SerializedName("place_id") val place_id : String,
     @SerializedName("plus_code") val plus_code : PlusCode,
     @SerializedName("price_level") val price_level : Int,
@@ -35,7 +35,7 @@ data class NearbyPlace (
     val thumbnail: String?
         get() {
             return if (!photos.isNullOrEmpty()) {
-                photos[0].getUrl()
+                photos[0].link
             } else {
                 null
             }

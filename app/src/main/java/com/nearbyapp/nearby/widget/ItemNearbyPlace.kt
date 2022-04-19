@@ -15,13 +15,13 @@ class ItemNearbyPlace(context: Context): ConstraintLayout(context), IView {
 
     @BindWith(paths = ["NearbyPlace.thumbnail:String"])
     val image: ImageView
-    @BindWith(paths = ["NearbyPlace.name:String"])
+    @BindWith(paths = ["NearbyPlace.name:String", "NearbyPlaceWrapper.detail.place_name:String"])
     val name: TextView
-    @BindWith(paths = ["NearbyPlace.vicinity:String"])
+    @BindWith(paths = ["NearbyPlace.vicinity:String", "NearbyPlaceWrapper.detail.formatted_address:String"])
     val address: TextView
-    @BindWith(paths = ["NearbyPlace.opening_hours:OpeningHours"])
+    @BindWith(paths = ["NearbyPlace.opening_hours:OpeningHours", "NearbyPlaceWrapper.detail.opening_hours:OpeningHours"])
     val open: TextView
-    @BindWith(paths = ["NearbyPlace.price:String"])
+    @BindWith(paths = ["NearbyPlace.price:String", "NearbyPlaceWrapper.detail.price_text:String"])
     val price: TextView
 
     init {

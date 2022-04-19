@@ -12,7 +12,7 @@ import com.nearbyapp.nearby.R
 @BindableView
 class ItemPhoto(context: Context) : ConstraintLayout(context), IView {
 
-    @BindWith(paths = ["Photo.link:String"])
+    //@BindWith(paths = ["Photo.link:String"])
     var image: ImageView
 
     override fun name(): String {

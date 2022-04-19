@@ -4,27 +4,23 @@ import android.app.Application
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.databinding.databinding.IData
-import com.google.android.gms.maps.model.PolylineOptions
-import com.nearbyapp.nearby.AppController
-import com.nearbyapp.nearby.components.DownloadManagerHelper
 import com.nearbyapp.nearby.components.ResponseWrapper
-import com.nearbyapp.nearby.converters.PolylineParser.parsePolylineOptions
-import com.nearbyapp.nearby.model.ListWrapper
-import com.nearbyapp.nearby.model.MapWrapper
 import com.nearbyapp.nearby.model.detail.Detail
-import com.nearbyapp.nearby.repository.RepositoryImpl
+import com.nearbyapp.nearby.viewmodel.livedata.ImagesLiveData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
-class DetailViewModel(application: Application): BaseViewModel(application) {
+class DetailViewModel(application: Application): AbstractDetailViewModel(application) {
 
     private var job: Job? = null
     var detail: Detail? = null
 
     val details: MutableLiveData<MutableList<IData>> = MutableLiveData()
+    val favorite: MutableLiveData<Boolean> = MutableLiveData()
+
+    val imagesState: ImagesLiveData = ImagesLiveData(application)
 
     fun loadDetails(id: String, lat: Double, lng: Double) {
         loading.postValue(true)
@@ -35,67 +31,53 @@ class DetailViewModel(application: Application): BaseViewModel(application) {
                     val placeLat = response.value?.detail?.geometry?.location?.lat
                     val placeLng = response.value?.detail?.geometry?.location?.lng
                     val polyline = getPolyline(repository.getPolyline(placeLat!!, placeLng!!, lat, lng))
+                    val fav = repository.existPlace(id)
                     withContext(Dispatchers.Main) {
                         val details: MutableList<IData?> = mutableListOf()
                         response.value.detail.let {
-                            details.add(getImages(it))
+                            details.add(getImages(it.photos))
                             details.add(it)
                             details.add(getMap(it, lat, lng, polyline))
                             details.add(getReviews(it))
                             details.add(it.opening_hours)
                         }
+                        this@DetailViewModel.favorite.postValue(fav)
                         this@DetailViewModel.details.postValue(details.filterNotNull().toMutableList())
                         this@DetailViewModel.loading.postValue(false)
                     }
                 }
-                is ResponseWrapper.Error -> {loading.postValue(false)}
+                is ResponseWrapper.Error -> { loading.postValue(false) }
             }
         }
     }
 
     fun saveDetails() {
-        detail?.let {
+        detail?.let { detail ->
             job = viewModelScope.launch {
-                repository.savePlaceDetail(it)
+                if (!repository.existPlace(detail.place_id)) {
+                    detail.photos?.mapIndexed { i, photo ->
+                        if (imageCacheHelper.hasImage(photo.link)) {
+                            photo.path = imageCacheHelper.getFileName(detail.place_id, i)
+                        }
+                    }
+                    repository.savePlaceDetail(detail)
+                }
+            }
+            favorite.postValue(true)
+        }
+    }
+
+    fun deleteDetails() {
+        deletePlace(detail!!.place_id)
+        favorite.postValue(false)
+    }
+
+    fun saveImage() {
+        viewModelScope.launch {
+            detail?.let {
+                imageCacheHelper.writeImages(it.place_id, it.photos!!)
             }
         }
-    }
-
-    fun saveImage(): DownloadManagerHelper.DownloadRef {
-        return downloadManagerHelper.downloadImage(detail)
-    }
-
-    private fun getPolyline(response: ResponseWrapper<JSONObject?>): PolylineOptions? {
-        return when(response) {
-            is ResponseWrapper.Success -> {
-                parsePolylineOptions(response.value)
-            }
-            else -> null
-        }
-    }
-
-    private fun getImages(detail: Detail) : IData? {
-        detail.photos?.also {
-            return ListWrapper(it.toMutableList(), true)
-        }
-        return null
-    }
-
-    private fun getReviews(detail: Detail): IData? {
-        detail.reviews?.let {
-            return ListWrapper(it.mapIndexed { i, r ->
-                r.page = (i + 1).toString()
-                r
-            }.toMutableList(), true)
-        }
-        return null
-    }
-
-    private fun getMap(detail: Detail, userLat: Double, userLng: Double, polylineOptions: PolylineOptions?): IData? {
-        detail.geometry?.location?.let {
-            return MapWrapper(it.lat, it.lng, userLat, userLng, polylineOptions, "walking")
-        }
-        return null
     }
 
     override fun onCleared() {

@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.nearbyapp.nearby.components.Status
 import com.nearbyapp.nearby.model.ProgressWrapper
+import com.nearbyapp.nearby.model.TextWrapper
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.NearByViewModel
 
@@ -71,7 +72,11 @@ class NearByFragment: LocalizationFragmentV2() {
             if ( adapter.itemCount > 0 && adapter.getItem(adapter.itemCount - 1) is ProgressWrapper) {
                 adapter.removeItem(adapter.itemCount - 1)
             }
-            adapter.update(places)
+            if (places.isNotEmpty()) {
+                adapter.update(places)
+            } else {
+                adapter.update(listOf(TextWrapper("Nessun luogo trovato")))
+            }
             loading = false
         }
     }

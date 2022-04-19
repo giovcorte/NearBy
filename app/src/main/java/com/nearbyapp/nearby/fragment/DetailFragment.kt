@@ -1,12 +1,15 @@
 package com.nearbyapp.nearby.fragment
 
 import android.os.Bundle
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
-import android.view.*
-import androidx.core.content.ContextCompat
+import android.view.LayoutInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
+import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.R
+import com.nearbyapp.nearby.components.ImageCacheHelper
 import com.nearbyapp.nearby.components.Status
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.DetailViewModel
@@ -23,6 +26,20 @@ class DetailFragment: ListFragment() {
     private lateinit var activityViewModel: ActivityViewModel
     private lateinit var viewModel: DetailViewModel
 
+    private val menuListener = object : BaseActivity.MenuListener {
+        override fun onItemSelected(item: MenuItem): Boolean {
+            val itemId: Int = item.itemId
+            if (itemId == R.id.save) {
+                viewModel.saveImage()
+                return true
+            } else if (itemId == R.id.unsave) {
+                viewModel.deleteDetails()
+                return true
+            }
+            return true
+        }
+    }
+
     override fun doOnCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -36,19 +53,42 @@ class DetailFragment: ListFragment() {
         lat = clipboard.getData("lat") as Double
         lng = clipboard.getData("lng") as Double
         navigationManager.updateToolbar(name)
-        setHasOptionsMenu(true)
+        (activity as BaseActivity).registerMenuListener(menuListener)
     }
 
     override fun doOnViewCreated(view: View, savedInstanceState: Bundle?) {
         activityViewModel.errorState.observe(viewLifecycleOwner) { status ->
-            if (status == Status.READY) {
-                clean()
-                if (viewModel.details.value.isNullOrEmpty() && !loading) {
-                    loading = true
-                    viewModel.loadDetails(id, lat, lng)
+            when (status) {
+                Status.READY -> {
+                    clean()
+                    if (viewModel.details.value.isNullOrEmpty() && !loading) {
+                        loading = true
+                        viewModel.loadDetails(id, lat, lng)
+                    }
                 }
-            } else {
-                error(status)
+                else -> {
+                    error(status)
+                }
+            }
+        }
+        viewModel.favorite.observe(viewLifecycleOwner) { fav ->
+            navigationManager.updateToolbarMenu(if (fav) R.menu.menu_saved else R.menu.menu_save)
+        }
+        viewModel.imagesState.observe(viewLifecycleOwner) { imageStatus ->
+            when(imageStatus) {
+                ImageCacheHelper.Status.COMPLETED -> {
+                    loading(false)
+                    viewModel.saveDetails()
+                    Toast.makeText(context, "Luogo salvato", Toast.LENGTH_SHORT).show()
+                }
+                ImageCacheHelper.Status.WRITING -> {
+                    loading(true)
+                }
+                ImageCacheHelper.Status.ERROR -> {
+                    loading(false)
+                    dialog("Errore", "Impossibile scaricare le immagini")
+                }
+                else -> { loading(false) }
             }
         }
         viewModel.details.observe(viewLifecycleOwner) { details ->
@@ -61,34 +101,9 @@ class DetailFragment: ListFragment() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.menu_detail, menu)
-        val submenu: Menu = menu.getItem(0).subMenu
-        for (i in 0 until submenu.size()) {
-            val item: MenuItem = submenu.getItem(i)
-            val title = SpannableString(submenu.getItem(i).title.toString())
-            title.setSpan(
-                ForegroundColorSpan(
-                    ContextCompat.getColor(
-                        requireActivity(),
-                        R.color.mediumgray
-                    )
-                ), 0, title.length, 0
-            )
-            item.title = title
-        }
-        super.onCreateOptionsMenu(menu, inflater)
+    override fun onDestroyView() {
+        super.onDestroyView()
+        imageCacheHelper.abortWritingImages()
     }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val itemId: Int = item.itemId
-        if (itemId == R.id.save) {
-            viewModel.saveDetails()
-            submitDownload(viewModel.saveImage())
-            return true
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
 
 }

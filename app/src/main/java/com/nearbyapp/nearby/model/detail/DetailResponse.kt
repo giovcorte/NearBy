@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class DetailResponse (
 
-	@SerializedName("html_attributions") val html_attributions : List<String>,
+	@SerializedName("html_attributions") val html_attributions : List<String>? = null,
 	@SerializedName("result") val detail : Detail,
 	@SerializedName("status") val status : String
 )

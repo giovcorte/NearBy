@@ -12,6 +12,8 @@ data class Photo (
 	@SerializedName("photo_reference") val photo_reference : String,
 	@SerializedName("width") val width : Int
 ): IData {
+	@SerializedName("path") var path: String? = null
+
 	val link: String
 		get() {
 			return "https://maps.googleapis.com/maps/api/place/photo?maxwidth=$width&photoreference=$photo_reference&key=AIzaSyA6H30gsKS5UGyR30_CxE1TygjPup6wyOM"

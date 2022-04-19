@@ -41,10 +41,6 @@ class ActivityViewModel(application: Application): AndroidViewModel(application)
         }
     }
 
-    fun postLocationValue(active: Boolean) {
-        locationState.postValue(active)
-    }
-
     fun postServiceValue(active: Boolean) {
         serviceState.postValue(active)
     }

@@ -1,6 +1,7 @@
 package com.nearbyapp.nearby.components
 
 import android.content.SharedPreferences
+import com.nearbyapp.nearby.AppConstants
 import com.nearbyapp.nearby.model.RadiusPreference
 import com.nearbyapp.nearby.model.TravelMode
 import com.nearbyapp.nearby.model.TravelModePreference
@@ -25,8 +26,8 @@ class PreferencesManager(private val sharedPreferences: SharedPreferences) {
 
     fun getTravelMode(): TravelModePreference {
         return TravelModePreference(
-            TravelMode("walking", isCurrentTravelMode("walking"), "Percorsi percorribili a piedi"),
-            TravelMode("driving", isCurrentTravelMode("driving"), "Percorsi percorribili in automobile")
+            TravelMode(AppConstants.WALKING, isCurrentTravelMode(AppConstants.WALKING), "Percorsi percorribili a piedi"),
+            TravelMode(AppConstants.DRIVING, isCurrentTravelMode(AppConstants.DRIVING), "Percorsi percorribili in automobile")
         )
     }
 
@@ -36,8 +37,14 @@ class PreferencesManager(private val sharedPreferences: SharedPreferences) {
         editor.apply()
     }
 
+    fun getTravelModeString(): String {
+        val result = sharedPreferences.getString(TRAVEL_MODE, AppConstants.WALKING)
+        result?.let { return result }
+        return AppConstants.WALKING
+    }
+
     private fun isCurrentTravelMode(travelMode: String): Boolean {
-        val currentTravelMode = sharedPreferences.getString(TRAVEL_MODE, "walking")
+        val currentTravelMode = sharedPreferences.getString(TRAVEL_MODE, AppConstants.WALKING)
         return travelMode == currentTravelMode
     }
 

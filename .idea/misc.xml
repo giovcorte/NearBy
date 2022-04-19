@@ -15,6 +15,7 @@
         <entry key="app/src/main/res/drawable/outline_dns_24.xml" value="0.2315" />
         <entry key="app/src/main/res/drawable/outline_done_24.xml" value="0.2315" />
         <entry key="app/src/main/res/drawable/outline_error_outline_24.xml" value="0.2315" />
+        <entry key="app/src/main/res/drawable/outline_favorite_24.xml" value="0.2315" />
         <entry key="app/src/main/res/drawable/outline_favorite_border_24.xml" value="0.2315" />
         <entry key="app/src/main/res/drawable/outline_local_parking_24.xml" value="0.2315" />
         <entry key="app/src/main/res/drawable/outline_location_disabled_24.xml" value="0.2315" />
@@ -35,11 +36,14 @@
         <entry key="app/src/main/res/layout/item_review.xml" value="0.1" />
         <entry key="app/src/main/res/layout/item_simple_place.xml" value="0.3473731884057971" />
         <entry key="app/src/main/res/layout/item_spinner.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_text.xml" value="0.3473731884057971" />
         <entry key="app/src/main/res/layout/item_text_checkbox.xml" value="0.3473731884057971" />
         <entry key="app/src/main/res/layout/item_text_seek_bar.xml" value="0.3473731884057971" />
         <entry key="app/src/main/res/menu/drawer_menu.xml" value="0.365625" />
         <entry key="app/src/main/res/menu/menu_detail.xml" value="0.365625" />
         <entry key="app/src/main/res/menu/menu_home.xml" value="0.365625" />
+        <entry key="app/src/main/res/menu/menu_save.xml" value="0.365625" />
+        <entry key="app/src/main/res/menu/menu_saved.xml" value="0.365625" />
       </map>
     </option>
   </component>

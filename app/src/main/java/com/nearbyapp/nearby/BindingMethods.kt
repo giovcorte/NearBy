@@ -22,10 +22,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
-import com.nearbyapp.nearby.components.Clipboard
-import com.nearbyapp.nearby.components.DownloadManagerHelper
-import com.nearbyapp.nearby.components.PreferencesManager
-import com.nearbyapp.nearby.components.Status
+import com.nearbyapp.nearby.components.*
 import com.nearbyapp.nearby.model.*
 import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.model.detail.OpeningHours
@@ -33,21 +30,30 @@ import com.nearbyapp.nearby.model.detail.Review
 import com.nearbyapp.nearby.model.nearby.NearbyPlace
 import com.nearbyapp.nearby.model.nearby.Photo
 import com.nearbyapp.nearby.navigation.NavigationManager
-import com.nearbyapp.nearby.repository.RepositoryImpl
 import com.nearbyapp.nearby.widget.*
 import com.squareup.picasso.Picasso
-import kotlinx.coroutines.CoroutineDispatcher
 
-
-@SuppressLint("unused")
+@SuppressLint("SetTextI18n")
 object BindingMethods {
 
     @JvmStatic
     @BindingMethod
-    fun bindNearbyPlaceWrapper(@View view: ItemNearbyPlace?, @Data data: NearbyPlaceWrapper?, @Inject downloadManagerHelper: DownloadManagerHelper) {
+    fun bindNearbyPlaceWrapper(
+        @View view: ItemNearbyPlace?,
+        @Data data: NearbyPlaceWrapper?,
+        @Inject cacheManagerHelper: ImageCacheHelper,
+        @Inject navigation: NavigationManager,
+        @Inject clipboard: Clipboard
+    ) {
         safeLet(view, data) {v, wrapper ->
-            downloadManagerHelper.getImage(wrapper.detail.place_id)?.let {
-                Picasso.get().load(it).fit().centerCrop().into(v.image)
+            wrapper.detail.photos?.first()?.path?.let {
+                cacheManagerHelper.getDownloadedImage(it)
+                    ?.let { it1 -> Picasso.get().load(it1).fit().centerCrop().into(v.image) }
+            }
+            v.setOnClickListener {
+                clipboard.putData("id", wrapper.detail.place_id)
+                clipboard.putData("name", wrapper.detail.place_name)
+                navigation.navigateTo("savedDetail")
             }
         }
     }
@@ -80,7 +86,12 @@ object BindingMethods {
 
     @JvmStatic
     @BindingMethod
-    fun bindItemSeekBar(@View view: ItemTextSeekBar?, @Data data: RadiusPreference?, @Inject preferencesManager: PreferencesManager?, @Inject navigation: NavigationManager) {
+    fun bindItemSeekBar(
+        @View view: ItemTextSeekBar?,
+        @Data data: RadiusPreference?,
+        @Inject preferencesManager: PreferencesManager?,
+        @Inject navigation: NavigationManager
+    ) {
         safeLet(view, data) { seekView, seekData ->
             seekView.text.text = seekView.context.getString(R.string.radius_preference_desc)
 
@@ -95,7 +106,6 @@ object BindingMethods {
             }
 
             seekView.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                @SuppressLint("SetTextI18n")
                 override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
                     seekView.current.text = "$p1 km"
                     preferencesManager?.putRadius(p1)
@@ -120,8 +130,14 @@ object BindingMethods {
 
     @JvmStatic
     @BindingMethod
-    fun bindItemImage(@View view: ItemPhoto?, @Data data: Photo?) {
-
+    fun bindItemImage(
+        @View view: ItemPhoto?,
+        @Data data: Photo?,
+        @Inject imageDownloaderHelper: ImageCacheHelper
+    ) {
+        safeLet(view?.image, data) { imageView, photo ->
+            ImageLoader.load(imageView, photo, imageDownloaderHelper)
+        }
     }
 
     @JvmStatic
@@ -133,7 +149,7 @@ object BindingMethods {
     @JvmStatic
     @BindingMethod
     fun bindItemDetail(@View view: ItemDetail?, @Data data: Detail?) {
-        val detail = data as Detail
+
     }
 
     @JvmStatic
@@ -152,7 +168,7 @@ object BindingMethods {
                     googleMap.addMarker(MarkerOptions().position(LatLng(mapData.lat, mapData.lng)))
                     googleMap.addMarker(MarkerOptions().position(LatLng(mapData.userLat, mapData.userLng)))
                     mapData.polylineOptions?.let {
-                        if (mapData.travelMode == "walking") {
+                        if (mapData.travelMode == AppConstants.WALKING) {
                             it.color(ContextCompat.getColor(mapView.context, R.color.green))
                         } else {
                             it.color(ContextCompat.getColor(mapView.context, R.color.orange))
@@ -194,11 +210,7 @@ object BindingMethods {
     @JvmStatic
     @BindingMethod
     fun bindImage(@View view: ImageView?, @Data data: String?) {
-        if (Utils.isNumber(data)) {
-            Picasso.get().load(data!!.toInt()).fit().into(view)
-        } else {
-            Picasso.get().load(data).centerCrop().fit().into(view)
-        }
+        if (data != null) ImageLoader.load(view, data) else view?.visibility = GONE
     }
 
     @JvmStatic
@@ -242,6 +254,12 @@ object BindingMethods {
     @JvmStatic
     @BindingMethod
     fun bindItemProgress(@View view: ItemSpinner?, @Data data: ProgressWrapper?) {
+
+    }
+
+    @JvmStatic
+    @BindingMethod
+    fun bindItemText(@View view: ItemText?, @Data data: TextWrapper?) {
 
     }
 

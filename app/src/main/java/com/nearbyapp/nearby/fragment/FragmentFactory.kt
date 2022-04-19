@@ -12,6 +12,7 @@ class FragmentFactory {
                 "detail" -> return DetailFragment()
                 "settings" -> return SettingsFragment()
                 "saved" -> return SavedPlacesFragment()
+                "savedDetail" -> return SavedDetailFragment()
             }
             return Fragment()
         }

@@ -7,9 +7,9 @@ import androidx.fragment.app.Fragment
 import com.databinding.databinding.AdapterDataBinding
 import com.databinding.databinding.DataBinding
 import com.databinding.databinding.factory.ViewFactory
-import com.nearbyapp.nearby.MainActivity
+import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.components.Clipboard
-import com.nearbyapp.nearby.components.DownloadManagerHelper
+import com.nearbyapp.nearby.components.ImageCacheHelper
 import com.nearbyapp.nearby.components.PreferencesManager
 import com.nearbyapp.nearby.navigation.NavigationManager
 
@@ -18,7 +18,7 @@ abstract class BaseFragment: Fragment() {
     lateinit var navigationManager: NavigationManager
     lateinit var clipboard: Clipboard
     lateinit var preferencesManager: PreferencesManager
-    lateinit var downloadManagerHelper: DownloadManagerHelper
+    lateinit var imageCacheHelper: ImageCacheHelper
 
     lateinit var dataBinding: DataBinding
     lateinit var adapterDataBinding: AdapterDataBinding
@@ -26,17 +26,17 @@ abstract class BaseFragment: Fragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        if (context is MainActivity) {
+        if (context is BaseActivity) {
             navigationManager = context.navigationManager
             clipboard = context.clipboard
             preferencesManager = context.preferencesManager
-            downloadManagerHelper = context.downloadManagerHelper
+            imageCacheHelper = context.imageCacheHelper
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        this.dataBinding = DataBinding(preferencesManager, clipboard, downloadManagerHelper, navigationManager)
+        this.dataBinding = DataBinding(imageCacheHelper, preferencesManager, clipboard, navigationManager)
         this.adapterDataBinding = AdapterDataBinding(dataBinding)
         this.viewFactory = ViewFactory(requireContext())
     }
@@ -49,12 +49,8 @@ abstract class BaseFragment: Fragment() {
         view.visibility = View.VISIBLE
     }
 
-    fun submitDownload(ref: DownloadManagerHelper.DownloadRef) {
-        if (ref.status == DownloadManagerHelper.DownloadRef.VALID) {
-            (requireActivity() as MainActivity).submitDownloadHandler(ref)
-        } else {
-            (requireActivity() as MainActivity).dialog("Errore","Impossibile effetturare il download")
-        }
+    fun dialog(title: String, message: String) {
+        (requireActivity() as BaseActivity).dialog(title,message)
     }
 
 }

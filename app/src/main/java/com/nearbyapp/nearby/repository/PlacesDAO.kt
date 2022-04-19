@@ -13,7 +13,10 @@ interface PlacesDAO {
     suspend fun getAllPlaces(): List<Detail>
 
     @Query("SELECT * FROM detail WHERE place_id == :id")
-    suspend fun getPlace(id: String): Detail
+    suspend fun getPlace(id: String): Detail?
+
+    @Query("SELECT EXISTS (SELECT 1 FROM detail WHERE place_id = :id)")
+    suspend fun existPlace(id: String): Boolean
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDetail(detail: Detail)

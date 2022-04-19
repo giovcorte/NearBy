@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.nearbyapp.nearby.AppController
-import com.nearbyapp.nearby.components.DownloadManagerHelper
+import com.nearbyapp.nearby.components.ImageCacheHelper
 import com.nearbyapp.nearby.components.PreferencesManager
 import com.nearbyapp.nearby.repository.RepositoryImpl
 
@@ -14,7 +14,7 @@ abstract class BaseViewModel(application: Application): AndroidViewModel(applica
 
     val repository: RepositoryImpl = (application as AppController).repository
     val preferencesManager: PreferencesManager = (application as AppController).preferencesManager
-    val downloadManagerHelper: DownloadManagerHelper = (application as AppController).downloadMnagerHelper
+    val imageCacheHelper: ImageCacheHelper = (application as AppController).imageCacheHelper
 
     init {
         repository.serviceErrorCallBack?.onReady()

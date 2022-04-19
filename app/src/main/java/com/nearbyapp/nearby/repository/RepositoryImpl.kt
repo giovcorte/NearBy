@@ -34,6 +34,9 @@ class RepositoryImpl(
     }
 
     suspend fun getPlaceDetail(id: String): ResponseWrapper<DetailResponse?> {
+        if (existPlace(id)) {
+            return ResponseWrapper.Success(wrapDatabaseStoredPlace(getStoredPlace(id)!!))
+        }
         return safeApiCall(Dispatchers.IO) { placesService.getPlace(id, BuildConfig.GOOGLE_API_KEY) }
     }
 
@@ -43,11 +46,15 @@ class RepositoryImpl(
         }
     }
 
+    suspend fun existPlace(id: String): Boolean {
+        return placesDAO.existPlace(id)
+    }
+
     suspend fun getStoredPlaces(): List<Detail> {
         return placesDAO.getAllPlaces()
     }
 
-    suspend fun getStoredPlace(id: String): Detail {
+    suspend fun getStoredPlace(id: String): Detail? {
         return placesDAO.getPlace(id)
     }
 
@@ -56,7 +63,11 @@ class RepositoryImpl(
     }
 
     suspend fun deletePlaceDetail(id: String) {
-        return placesDAO.deleteDetail(id)
+        placesDAO.deleteDetail(id)
+    }
+
+    private fun wrapDatabaseStoredPlace(detail: Detail): DetailResponse {
+        return DetailResponse(emptyList(), detail, "OK")
     }
 
     private suspend fun <T> safeApiCall(dispatcher: CoroutineDispatcher, apiCall: suspend () -> T): ResponseWrapper<T> {

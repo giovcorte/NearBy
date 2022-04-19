@@ -14,7 +14,7 @@ class GenericUpdatableRecyclerViewAdapter(
     viewFactory
 ) {
 
-    fun update(newList: MutableList<IData>) {
+    fun update(newList: List<IData>) {
         val diffResult = DiffUtil.calculateDiff(
             IdentifiableDiffUtilCallback(
             getItems().map { it as Identifiable }.toMutableList(),

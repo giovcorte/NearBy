@@ -1,8 +1,10 @@
 package com.nearbyapp.nearby.navigation
 
-import com.nearbyapp.nearby.MainActivity
+import androidx.core.view.GravityCompat
+import com.nearbyapp.nearby.BaseActivity
+import com.nearbyapp.nearby.R
 
-class NavigationManager(var activity: MainActivity, var fragmentManager: IFragmentManager) {
+class NavigationManager(var activity: BaseActivity, var fragmentManager: IFragmentManager) {
 
     fun initNavigation(fragment: String) {
         fragmentManager.pushFirstFragment(fragment)
@@ -13,6 +15,7 @@ class NavigationManager(var activity: MainActivity, var fragmentManager: IFragme
     }
 
     fun backTo(name: String) {
+        activity.getToolbar().menu.clear()
         fragmentManager.popToName(name)
     }
 
@@ -20,6 +23,7 @@ class NavigationManager(var activity: MainActivity, var fragmentManager: IFragme
         if (fragmentManager.isCurrentFragmentFirst()) {
             activity.finish()
         } else {
+            activity.getToolbar().menu.clear()
             fragmentManager.popLastFragment()
         }
     }
@@ -29,7 +33,19 @@ class NavigationManager(var activity: MainActivity, var fragmentManager: IFragme
     }
 
     fun updateToolbar(title: String?) {
-        activity.updateToolbar(fragmentManager.isCurrentFragmentFirst(), title)
+        activity.getToolbar().title = title
+        if (!fragmentManager.isCurrentFragmentFirst()) {
+            activity.getToolbar().setNavigationIcon(R.drawable.arrow_back)
+            activity.getToolbar().setNavigationOnClickListener { backToPrevious() }
+        } else {
+            activity.getToolbar().setNavigationIcon(R.drawable.menu)
+            activity.getToolbar().setNavigationOnClickListener { activity.getDrawer().openDrawer(GravityCompat.START) }
+        }
+    }
+
+    fun updateToolbarMenu(resId: Int) {
+        activity.getToolbar().menu.clear()
+        activity.getToolbar().inflateMenu(resId)
     }
 
 }

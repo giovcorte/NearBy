@@ -1,18 +1,10 @@
 package com.nearbyapp.nearby.loader.cache
 
 import android.content.Context
-import com.nearbyapp.nearby.loader.cache.IImageCache
-import kotlin.jvm.Synchronized
 import android.graphics.Bitmap
 import android.os.Environment
-import com.nearbyapp.nearby.loader.cache.ImageCache.CachingStrategy
-import com.nearbyapp.nearby.loader.cache.memorycache.MemoryImageCache
 import com.nearbyapp.nearby.loader.cache.disklrucache.DiskLruImageCache
-import com.nearbyapp.nearby.model.nearby.Photo
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.nearbyapp.nearby.loader.cache.memorycache.MemoryImageCache
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -40,21 +32,25 @@ class ImageCache(context: Context) {
     }
 
     @Synchronized
-    fun put(s: String?, data: Bitmap?, cachingStrategy: CachingStrategy?) {
+    fun put(s: String, data: Bitmap?, cachingStrategy: CachingStrategy?) {
         when (cachingStrategy) {
             CachingStrategy.ALL -> {
-                if (memoryImageCache[s] == null) {
+                if (!memoryImageCache.contains(s)) {
                     memoryImageCache.put(s, data)
                 }
-                if (diskLruImageCache[s] == null) {
+                if (!diskLruImageCache.contains(s)) {
                     diskLruImageCache.put(s, data)
                 }
             }
             CachingStrategy.DISK -> if (diskLruImageCache[s] == null) {
-                diskLruImageCache.put(s, data)
+                if (!diskLruImageCache.contains(s)) {
+                    diskLruImageCache.put(s, data)
+                }
             }
             CachingStrategy.MEMORY -> if (memoryImageCache[s] == null) {
-                memoryImageCache.put(s, data)
+                if (!memoryImageCache.contains(s)) {
+                    memoryImageCache.put(s, data)
+                }
             }
             CachingStrategy.NONE -> {
             }

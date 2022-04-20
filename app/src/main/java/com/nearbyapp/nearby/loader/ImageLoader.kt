@@ -85,6 +85,11 @@ class ImageLoader(application: Application) {
         }
     }
 
+    @Synchronized
+    fun abort() {
+        coroutineScope.coroutineContext.cancelChildren()
+    }
+
     fun clear() {
         imageCache.clear()
     }

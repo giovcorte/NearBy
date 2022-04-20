@@ -32,6 +32,8 @@ class SavedDetailFragment: ListFragment() {
             adapter.addItems(it)
             adapter.notifyItemRangeInserted(0, adapter.itemCount)
         }
-        viewModel.loadDetails(id)
+        if (viewModel.details.value.isNullOrEmpty()) {
+            viewModel.loadDetails(id)
+        }
     }
 }

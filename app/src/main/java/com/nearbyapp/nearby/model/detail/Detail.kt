@@ -1,16 +1,15 @@
 package com.nearbyapp.nearby.model.detail
 
-import android.os.Environment
-import android.os.Environment.DIRECTORY_DOWNLOADS
-import androidx.room.*
+import androidx.room.ColumnInfo
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.databinding.annotations.BindableObject
 import com.databinding.databinding.IData
 import com.google.gson.annotations.SerializedName
-import com.nearbyapp.nearby.model.ListWrapper
 import com.nearbyapp.nearby.model.nearby.Geometry
 import com.nearbyapp.nearby.model.nearby.Photo
 import com.nearbyapp.nearby.widget.ItemDetail
-import java.io.File
 
 @Entity
 @BindableObject(view = ItemDetail::class)

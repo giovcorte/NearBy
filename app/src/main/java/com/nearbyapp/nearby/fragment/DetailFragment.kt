@@ -20,20 +20,17 @@ class DetailFragment: ListFragment() {
 
     private lateinit var id: String
     private lateinit var name: String
-    private var lat by Delegates.notNull<Double>()
-    private var lng by Delegates.notNull<Double>()
 
     private lateinit var activityViewModel: ActivityViewModel
     private lateinit var viewModel: DetailViewModel
 
     private val menuListener = object : BaseActivity.MenuListener {
         override fun onItemSelected(item: MenuItem): Boolean {
-            val itemId: Int = item.itemId
-            if (itemId == R.id.save) {
+            if (item.itemId == R.id.save) {
                 viewModel.saveImage()
                 return true
-            } else if (itemId == R.id.unsave) {
-                viewModel.deleteDetails()
+            } else if (item.itemId == R.id.unsave) {
+                viewModel.deletePlace(viewModel.detail?.place_id!!)
                 return true
             }
             return true
@@ -50,8 +47,8 @@ class DetailFragment: ListFragment() {
 
         id = clipboard.getData("id") as String
         name = clipboard.getData("name") as String
-        lat = clipboard.getData("lat") as Double
-        lng = clipboard.getData("lng") as Double
+        viewModel.lat = clipboard.getData("lat") as Double
+        viewModel.lng = clipboard.getData("lng") as Double
         navigationManager.updateToolbar(name)
         (activity as BaseActivity).registerMenuListener(menuListener)
     }
@@ -63,7 +60,7 @@ class DetailFragment: ListFragment() {
                     clean()
                     if (viewModel.details.value.isNullOrEmpty() && !loading) {
                         loading = true
-                        viewModel.loadDetails(id, lat, lng)
+                        viewModel.loadDetails(id)
                     }
                 }
                 else -> {
@@ -103,7 +100,7 @@ class DetailFragment: ListFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        //imageCacheHelper.abortWritingImages()
+        imageLoader.abort()
     }
 
 }

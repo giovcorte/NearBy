@@ -10,9 +10,7 @@ import kotlinx.coroutines.withContext
 
 class SavedDetailViewModel(application: Application): AbstractDetailViewModel(application) {
 
-    var details: MutableLiveData<MutableList<IData>> = MutableLiveData()
-
-    fun loadDetails(id: String) {
+    override fun loadDetails(id: String) {
         viewModelScope.launch {
             val detail = repository.getStoredPlace(id)
             withContext(Dispatchers.Main) {

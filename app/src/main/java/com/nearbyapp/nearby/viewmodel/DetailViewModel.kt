@@ -12,18 +12,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.properties.Delegates
 
 class DetailViewModel(application: Application): AbstractDetailViewModel(application) {
 
+
     private var job: Job? = null
+
+    var lat: Double = 0.0
+    var lng: Double = 0.0
     var detail: Detail? = null
 
-    val details: MutableLiveData<MutableList<IData>> = MutableLiveData()
     val favorite: MutableLiveData<Boolean> = MutableLiveData()
-
     val imagesState: ImagesLiveData = ImagesLiveData(application)
 
-    fun loadDetails(id: String, lat: Double, lng: Double) {
+    override fun loadDetails(id: String) {
         loading.postValue(true)
         job = viewModelScope.launch {
             when (val response = repository.getPlaceDetail(id)) {
@@ -68,8 +71,8 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
         }
     }
 
-    fun deleteDetails() {
-        deletePlace(detail!!.place_id)
+    override fun deletePlace(id: String) {
+        super.deletePlace(id)
         favorite.postValue(false)
     }
 

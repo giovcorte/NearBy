@@ -1,6 +1,7 @@
 package com.nearbyapp.nearby.viewmodel
 
 import android.app.Application
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.databinding.databinding.IData
 import com.google.android.gms.maps.model.PolylineOptions
@@ -14,6 +15,10 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 abstract class AbstractDetailViewModel(application: Application): BaseViewModel(application) {
+
+    val details: MutableLiveData<MutableList<IData>> = MutableLiveData()
+
+    abstract fun loadDetails(id: String)
 
     fun getPolyline(response: ResponseWrapper<JSONObject?>): PolylineOptions? {
         return when(response) {
@@ -48,7 +53,7 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
         return null
     }
 
-    fun deletePlace(id: String) {
+    open fun deletePlace(id: String) {
         viewModelScope.launch {
             imageLoader.cache().deleteDownloadedImage(id)
             repository.deletePlaceDetail(id)

@@ -9,8 +9,8 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.R
-import com.nearbyapp.nearby.components.ImageCacheHelper
 import com.nearbyapp.nearby.components.Status
+import com.nearbyapp.nearby.loader.ImageLoader
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.DetailViewModel
 import kotlin.properties.Delegates
@@ -76,15 +76,15 @@ class DetailFragment: ListFragment() {
         }
         viewModel.imagesState.observe(viewLifecycleOwner) { imageStatus ->
             when(imageStatus) {
-                ImageCacheHelper.Status.COMPLETED -> {
+                ImageLoader.Status.COMPLETED -> {
                     loading(false)
                     viewModel.saveDetails()
                     Toast.makeText(context, "Luogo salvato", Toast.LENGTH_SHORT).show()
                 }
-                ImageCacheHelper.Status.WRITING -> {
+                ImageLoader.Status.WRITING -> {
                     loading(true)
                 }
-                ImageCacheHelper.Status.ERROR -> {
+                ImageLoader.Status.ERROR -> {
                     loading(false)
                     dialog("Errore", "Impossibile scaricare le immagini")
                 }
@@ -103,7 +103,7 @@ class DetailFragment: ListFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        imageCacheHelper.abortWritingImages()
+        //imageCacheHelper.abortWritingImages()
     }
 
 }

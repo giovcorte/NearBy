@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.databinding.databinding.IData
 import com.nearbyapp.nearby.components.ResponseWrapper
+import com.nearbyapp.nearby.loader.cache.ImageCache
 import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.viewmodel.livedata.ImagesLiveData
 import kotlinx.coroutines.Dispatchers
@@ -56,8 +57,8 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
             job = viewModelScope.launch {
                 if (!repository.existPlace(detail.place_id)) {
                     detail.photos?.mapIndexed { i, photo ->
-                        if (imageCacheHelper.hasImage(photo.link)) {
-                            photo.path = imageCacheHelper.getFileName(detail.place_id, i)
+                        if (imageLoader.cache().contains(photo.link)) {
+                            photo.path = ImageCache.getFileName(detail.place_id, i)
                         }
                     }
                     repository.savePlaceDetail(detail)
@@ -74,8 +75,8 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
 
     fun saveImage() {
         viewModelScope.launch {
-            detail?.let {
-                imageCacheHelper.writeImages(it.place_id, it.photos!!)
+            detail?.photos?.let {
+                imageLoader.dumps(detail!!.place_id, detail!!.photos!!)
             }
         }
     }

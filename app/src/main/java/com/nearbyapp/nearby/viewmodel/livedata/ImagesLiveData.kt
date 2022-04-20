@@ -3,40 +3,40 @@ package com.nearbyapp.nearby.viewmodel.livedata
 import android.app.Application
 import androidx.lifecycle.LiveData
 import com.nearbyapp.nearby.AppController
-import com.nearbyapp.nearby.components.ImageCacheHelper
+import com.nearbyapp.nearby.loader.ImageLoader
 
 
-class ImagesLiveData(val application: Application): LiveData<ImageCacheHelper.Status>() {
+class ImagesLiveData(val application: Application): LiveData<ImageLoader.Status>() {
 
-    private val imageCacheHelper = (application as AppController).imageCacheHelper
+    private val imageLoader = (application as AppController).imageLoader
 
-    private val listener = object : ImageCacheHelper.Listener {
+    private val listener = object : ImageLoader.Listener {
         override fun onWritingStarted() {
-            postValue(ImageCacheHelper.Status.WRITING)
+            postValue(ImageLoader.Status.WRITING)
         }
 
         override fun onWritingCompleted() {
-            postValue(ImageCacheHelper.Status.COMPLETED)
-            value = ImageCacheHelper.Status.IDLE
+            postValue(ImageLoader.Status.COMPLETED)
+            value = ImageLoader.Status.IDLE
         }
 
         override fun onWritingFailed() {
-            postValue(ImageCacheHelper.Status.ERROR)
-            value = ImageCacheHelper.Status.IDLE
+            postValue(ImageLoader.Status.ERROR)
+            value = ImageLoader.Status.IDLE
         }
     }
 
     init {
-        value = ImageCacheHelper.Status.IDLE
+        value = ImageLoader.Status.IDLE
     }
 
     override fun onActive() {
         super.onActive()
-        imageCacheHelper.registerListener(listener)
+        imageLoader.registerListener(listener)
     }
 
     override fun onInactive() {
-        imageCacheHelper.unregisterListener()
+        imageLoader.unregisterListener()
         super.onInactive()
     }
 

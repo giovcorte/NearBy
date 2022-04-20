@@ -22,7 +22,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
-import com.nearbyapp.nearby.components.*
+import com.nearbyapp.nearby.components.Clipboard
+import com.nearbyapp.nearby.components.PreferencesManager
+import com.nearbyapp.nearby.components.Status
+import com.nearbyapp.nearby.loader.ImageLoader
 import com.nearbyapp.nearby.model.*
 import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.model.detail.OpeningHours
@@ -31,7 +34,6 @@ import com.nearbyapp.nearby.model.nearby.NearbyPlace
 import com.nearbyapp.nearby.model.nearby.Photo
 import com.nearbyapp.nearby.navigation.NavigationManager
 import com.nearbyapp.nearby.widget.*
-import com.squareup.picasso.Picasso
 
 @SuppressLint("SetTextI18n")
 object BindingMethods {
@@ -41,14 +43,13 @@ object BindingMethods {
     fun bindNearbyPlaceWrapper(
         @View view: ItemNearbyPlace?,
         @Data data: NearbyPlaceWrapper?,
-        @Inject cacheManagerHelper: ImageCacheHelper,
+        @Inject imageLoader: ImageLoader,
         @Inject navigation: NavigationManager,
         @Inject clipboard: Clipboard
     ) {
         safeLet(view, data) {v, wrapper ->
             wrapper.detail.photos?.first()?.path?.let {
-                cacheManagerHelper.getDownloadedImage(it)
-                    ?.let { it1 -> Picasso.get().load(it1).fit().centerCrop().into(v.image) }
+                imageLoader.load(imageLoader.cache().getDownloadedImage(it)!!, v.image)
             }
             v.setOnClickListener {
                 clipboard.putData("id", wrapper.detail.place_id)
@@ -89,8 +90,7 @@ object BindingMethods {
     fun bindItemSeekBar(
         @View view: ItemTextSeekBar?,
         @Data data: RadiusPreference?,
-        @Inject preferencesManager: PreferencesManager?,
-        @Inject navigation: NavigationManager
+        @Inject preferencesManager: PreferencesManager?
     ) {
         safeLet(view, data) { seekView, seekData ->
             seekView.text.text = seekView.context.getString(R.string.radius_preference_desc)
@@ -133,10 +133,15 @@ object BindingMethods {
     fun bindItemImage(
         @View view: ItemPhoto?,
         @Data data: Photo?,
-        @Inject imageDownloaderHelper: ImageCacheHelper
+        @Inject imageLoader: ImageLoader
     ) {
         safeLet(view?.image, data) { imageView, photo ->
-            ImageLoader.load(imageView, photo, imageDownloaderHelper)
+            if (imageLoader.cache().exist(photo.path)) {
+                val file = imageLoader.cache().getDownloadedImage(photo.path)
+                imageLoader.load(file!!, imageView)
+            } else {
+                imageLoader.load(photo.link, imageView)
+            }
         }
     }
 
@@ -209,8 +214,14 @@ object BindingMethods {
 
     @JvmStatic
     @BindingMethod
-    fun bindImage(@View view: ImageView?, @Data data: String?) {
-        if (data != null) ImageLoader.load(view, data) else view?.visibility = GONE
+    fun bindImage(@View view: ImageView?, @Data data: String?, @Inject imageLoader: ImageLoader) {
+        if (data != null) {
+            if (Utils.isNumber(data)) {
+                imageLoader.load(data.toInt(), view)
+            } else {
+                imageLoader.load(data, view)
+            }
+        } else view?.visibility = GONE
     }
 
     @JvmStatic

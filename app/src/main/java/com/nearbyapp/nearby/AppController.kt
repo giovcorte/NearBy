@@ -6,6 +6,8 @@ import android.os.Environment
 import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapsSdkInitializedCallback
 import com.nearbyapp.nearby.components.*
+import com.nearbyapp.nearby.loader.ImageLoader
+import com.nearbyapp.nearby.loader.cache.ImageCache
 import com.nearbyapp.nearby.repository.AppDatabase
 import com.nearbyapp.nearby.repository.PlacesService
 import com.nearbyapp.nearby.repository.PolylineService
@@ -17,13 +19,11 @@ class AppController: Application(), OnMapsSdkInitializedCallback {
     lateinit var repository: RepositoryImpl
     lateinit var clipboard: Clipboard
     lateinit var preferencesManager: PreferencesManager
-    lateinit var imageCache: ImageCache
-    lateinit var imageCacheHelper: ImageCacheHelper
+    lateinit var imageLoader: ImageLoader
 
     override fun onCreate() {
         super.onCreate()
         MapsInitializer.initialize(applicationContext, MapsInitializer.Renderer.LATEST, this)
-        imageCache = ImageCache(File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)!!.absolutePath))
         repository = RepositoryImpl(
             PlacesService.getInstance(),
             PolylineService.getInstance(),
@@ -31,7 +31,7 @@ class AppController: Application(), OnMapsSdkInitializedCallback {
         )
         clipboard = Clipboard()
         preferencesManager = PreferencesManager(this.getSharedPreferences("NearByPreferences", Context.MODE_PRIVATE))
-        imageCacheHelper = ImageCacheHelper(imageCache)
+        imageLoader = ImageLoader(this)
     }
 
     override fun onMapsSdkInitialized(p0: MapsInitializer.Renderer) {

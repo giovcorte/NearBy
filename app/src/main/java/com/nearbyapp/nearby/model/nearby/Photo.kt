@@ -12,7 +12,7 @@ data class Photo (
 	@SerializedName("photo_reference") val photo_reference : String,
 	@SerializedName("width") val width : Int
 ): IData {
-	@SerializedName("path") var path: String? = null
+	@SerializedName("fileName") var id: String? = null
 
 	val link: String
 		get() {

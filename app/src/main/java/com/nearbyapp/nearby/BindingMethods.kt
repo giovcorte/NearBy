@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.databinding.annotations.BindingMethod
 import com.databinding.annotations.Data
 import com.databinding.annotations.Inject
@@ -23,6 +24,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
 import com.nearbyapp.nearby.components.Clipboard
+import com.nearbyapp.nearby.components.ImageStorageHelper
 import com.nearbyapp.nearby.components.PreferencesManager
 import com.nearbyapp.nearby.components.Status
 import com.nearbyapp.nearby.loader.ImageLoader
@@ -43,17 +45,17 @@ object BindingMethods {
     fun bindNearbyPlaceWrapper(
         @View view: ItemNearbyPlace?,
         @Data data: NearbyPlaceWrapper?,
-        @Inject imageLoader: ImageLoader,
+        @Inject imageStorage: ImageStorageHelper,
         @Inject navigation: NavigationManager,
         @Inject clipboard: Clipboard
     ) {
-        safeLet(view, data) {v, wrapper ->
-            wrapper.detail.photos?.first()?.path?.let {
-                imageLoader.load(imageLoader.cache().getDownloadedImage(it)!!, v.image)
+        safeLet(view, data?.detail) {v, detail ->
+            imageStorage.getImageFile(detail.storedThumbnail)?.let {
+                ImageLoader.get().load(it).into(v.image).run()
             }
             v.setOnClickListener {
-                clipboard.putData("id", wrapper.detail.place_id)
-                clipboard.putData("name", wrapper.detail.place_name)
+                clipboard.putData("id", detail.place_id)
+                clipboard.putData("name", detail.place_name)
                 navigation.navigateTo("savedDetail")
             }
         }
@@ -133,14 +135,18 @@ object BindingMethods {
     fun bindItemImage(
         @View view: ItemPhoto?,
         @Data data: Photo?,
-        @Inject imageLoader: ImageLoader
+        @Inject imageStorage: ImageStorageHelper
     ) {
         safeLet(view?.image, data) { imageView, photo ->
-            if (imageLoader.cache().exist(photo.path)) {
-                val file = imageLoader.cache().getDownloadedImage(photo.path)
-                imageLoader.load(file!!, imageView)
+            if (imageStorage.hasImageFile(photo.id)) {
+                val file = imageStorage.getImageFile(photo.id)
+                ImageLoader.get().load(file!!).into(imageView).run()
             } else {
-                imageLoader.load(photo.link, imageView)
+                val drawable = CircularProgressDrawable(imageView.context)
+                drawable.setColorSchemeColors(R.color.colorPrimary, R.color.colorPrimaryDark, R.color.colorAccent)
+                drawable.centerRadius = 30f
+                drawable.strokeWidth = 5f
+                ImageLoader.get().load(photo.link).into(imageView, drawable).run()
             }
         }
     }
@@ -214,14 +220,18 @@ object BindingMethods {
 
     @JvmStatic
     @BindingMethod
-    fun bindImage(@View view: ImageView?, @Data data: String?, @Inject imageLoader: ImageLoader) {
-        if (data != null) {
-            if (Utils.isNumber(data)) {
-                imageLoader.load(data.toInt(), view)
+    fun bindImage(@View view: ImageView?, @Data data: String?) {
+        safeLet(view, data) { v, s ->
+            if (Utils.isNumber(s)) {
+                ImageLoader.get().load(s.toInt()).into(v).run()
             } else {
-                imageLoader.load(data, view)
+                val drawable = CircularProgressDrawable(v.context)
+                drawable.setColorSchemeColors(R.color.colorPrimary, R.color.colorPrimaryDark, R.color.colorAccent)
+                drawable.centerRadius = 30f
+                drawable.strokeWidth = 5f
+                ImageLoader.get().load(s).into(v, drawable).run()
             }
-        } else view?.visibility = GONE
+        }
     }
 
     @JvmStatic

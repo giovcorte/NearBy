@@ -1,20 +1,19 @@
 package com.nearbyapp.nearby.loader.cache.memorycache
 
-import com.nearbyapp.nearby.loader.cache.IImageCache
 import android.graphics.Bitmap
-import java.lang.NullPointerException
+import com.nearbyapp.nearby.loader.cache.IImageCache
 import java.util.*
 
-class MemoryImageCache : IImageCache {
+class ImageMemoryCache : IImageCache {
 
     private val cache = Collections.synchronizedMap(
         LinkedHashMap<String?, Bitmap?>(10, 1.5f, true)
     )
 
     private var size: Long = 0
-    private val limit: Long = Runtime.getRuntime().maxMemory() / 4
+    private val limit: Long = Runtime.getRuntime().maxMemory() / 8
 
-    override fun get(key: String?): Bitmap? {
+    override fun get(key: String): Bitmap? {
         return try {
             if (!cache.containsKey(key)) {
                 null
@@ -24,11 +23,11 @@ class MemoryImageCache : IImageCache {
         }
     }
 
-    override fun contains(key: String?): Boolean {
+    override fun contains(key: String): Boolean {
         return cache.containsKey(key)
     }
 
-    override fun put(key: String?, bitmap: Bitmap?) {
+    override fun put(key: String, bitmap: Bitmap) {
         if (cache.containsKey(key)) {
             size -= getSizeInBytes(cache[key])
         }

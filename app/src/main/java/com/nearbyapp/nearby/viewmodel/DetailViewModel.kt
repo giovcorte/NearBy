@@ -5,14 +5,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.databinding.databinding.IData
 import com.nearbyapp.nearby.components.ResponseWrapper
-import com.nearbyapp.nearby.loader.cache.ImageCache
 import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.viewmodel.livedata.ImagesLiveData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.properties.Delegates
 
 class DetailViewModel(application: Application): AbstractDetailViewModel(application) {
 
@@ -61,7 +59,7 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
                 if (!repository.existPlace(detail.place_id)) {
                     detail.photos?.mapIndexed { i, photo ->
                         if (imageLoader.cache().contains(photo.link)) {
-                            photo.path = ImageCache.getFileName(detail.place_id, i)
+                            photo.id = imageStorageHelper.getImageId(detail.place_id, i)
                         }
                     }
                     repository.savePlaceDetail(detail)
@@ -71,15 +69,15 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
         }
     }
 
-    override fun deletePlace(id: String) {
-        super.deletePlace(id)
+    fun deletePlace() {
+        super.deleteDetails(detail!!)
         favorite.postValue(false)
     }
 
     fun saveImage() {
         viewModelScope.launch {
             detail?.photos?.let {
-                imageLoader.dumps(detail!!.place_id, detail!!.photos!!)
+                imageStorageHelper.storeImages(detail!!.place_id, it)
             }
         }
     }

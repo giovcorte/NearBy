@@ -24,7 +24,9 @@ class SavedPlacesViewModel(application: Application): BaseViewModel(application)
 
     fun deletePlace(id: String) {
         viewModelScope.launch {
-            imageLoader.cache().deleteDownloadedImage(id)
+            listOf(10).forEach {
+                imageStorageHelper.deleteStoredImage("$id-$it")
+            }
             repository.deletePlaceDetail(id)
         }
     }

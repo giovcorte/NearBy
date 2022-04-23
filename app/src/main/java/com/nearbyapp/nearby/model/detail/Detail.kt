@@ -30,6 +30,11 @@ data class Detail (
         return "Detail"
     }
 
+    val storedThumbnail: String?
+        get() {
+            return photos?.first()?.id
+        }
+
     val thumbnail: String?
         get() {
             photos?.let {
@@ -38,7 +43,7 @@ data class Detail (
             return null
         }
 
-    val rating_text: String
+    val ratingText: String
         get() {
             rating?.also {
                 return "Rating $rating /5"
@@ -46,7 +51,7 @@ data class Detail (
             return "Rating ?"
         }
 
-    val price_text: String
+    val priceText: String
         get() {
             return if (price_level > 0) {
                 var cash = ""

@@ -53,10 +53,12 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
         return null
     }
 
-    open fun deletePlace(id: String) {
+    open fun deleteDetails(detail: Detail) {
         viewModelScope.launch {
-            imageLoader.cache().deleteDownloadedImage(id)
-            repository.deletePlaceDetail(id)
+            detail.photos?.forEach {
+                imageStorageHelper.deleteStoredImage(it.id!!)
+            }
+            repository.deletePlaceDetail(detail.place_id)
         }
     }
 

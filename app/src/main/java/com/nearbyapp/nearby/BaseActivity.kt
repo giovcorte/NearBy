@@ -9,6 +9,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.navigation.NavigationView
 import com.nearbyapp.nearby.components.Clipboard
+import com.nearbyapp.nearby.components.ImageStorageHelper
 import com.nearbyapp.nearby.components.PreferencesManager
 import com.nearbyapp.nearby.loader.ImageLoader
 import com.nearbyapp.nearby.navigation.FragmentManagerHelper
@@ -22,8 +23,8 @@ class BaseActivity : AppCompatActivity() {
     lateinit var navigationManager: NavigationManager
     lateinit var clipboard: Clipboard
     lateinit var preferencesManager: PreferencesManager
-    //lateinit var imageCacheHelper: ImageCacheHelper
     lateinit var imageLoader: ImageLoader
+    lateinit var imageStorageHelper: ImageStorageHelper
 
     private lateinit var drawer: DrawerLayout
     private lateinit var toolbar: Toolbar
@@ -41,8 +42,8 @@ class BaseActivity : AppCompatActivity() {
         navigationManager = NavigationManager(this, fragmentManagerHelper)
         clipboard = (application as AppController).clipboard
         preferencesManager = (application as AppController).preferencesManager
-        //imageCacheHelper = (application as AppController).imageCacheHelper
         imageLoader = (application as AppController).imageLoader
+        imageStorageHelper = (application as AppController).imageStorageHelper
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)

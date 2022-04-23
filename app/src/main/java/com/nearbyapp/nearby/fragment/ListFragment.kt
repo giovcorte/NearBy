@@ -8,8 +8,8 @@ import android.widget.ProgressBar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nearbyapp.nearby.R
-import com.nearbyapp.nearby.recycler.GenericUpdatableRecyclerViewAdapter
 import com.nearbyapp.nearby.components.Status
+import com.nearbyapp.nearby.recycler.GenericUpdatableRecyclerViewAdapter
 import com.nearbyapp.nearby.widget.ErrorView
 
 abstract class ListFragment: BaseFragment() {

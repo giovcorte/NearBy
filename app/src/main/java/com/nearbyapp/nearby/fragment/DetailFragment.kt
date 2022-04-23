@@ -9,11 +9,10 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.R
+import com.nearbyapp.nearby.components.ImageStorageHelper
 import com.nearbyapp.nearby.components.Status
-import com.nearbyapp.nearby.loader.ImageLoader
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.DetailViewModel
-import kotlin.properties.Delegates
 
 
 class DetailFragment: ListFragment() {
@@ -30,7 +29,7 @@ class DetailFragment: ListFragment() {
                 viewModel.saveImage()
                 return true
             } else if (item.itemId == R.id.unsave) {
-                viewModel.deletePlace(viewModel.detail?.place_id!!)
+                viewModel.deletePlace()
                 return true
             }
             return true
@@ -73,15 +72,15 @@ class DetailFragment: ListFragment() {
         }
         viewModel.imagesState.observe(viewLifecycleOwner) { imageStatus ->
             when(imageStatus) {
-                ImageLoader.Status.COMPLETED -> {
+                ImageStorageHelper.Status.COMPLETED -> {
                     loading(false)
                     viewModel.saveDetails()
                     Toast.makeText(context, "Luogo salvato", Toast.LENGTH_SHORT).show()
                 }
-                ImageLoader.Status.WRITING -> {
+                ImageStorageHelper.Status.WRITING -> {
                     loading(true)
                 }
-                ImageLoader.Status.ERROR -> {
+                ImageStorageHelper.Status.ERROR -> {
                     loading(false)
                     dialog("Errore", "Impossibile scaricare le immagini")
                 }

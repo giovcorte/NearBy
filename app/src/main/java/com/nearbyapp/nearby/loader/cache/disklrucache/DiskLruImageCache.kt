@@ -29,14 +29,11 @@ class DiskLruImageCache(context: Context, uniqueName: String, diskCacheSize: Int
         }
     }
 
-    override fun put(key: String?, bitmap: Bitmap?) {
+    override fun put(key: String, bitmap: Bitmap) {
         val formattedKey = getDiskLruCacheFormattedString(key)
         var editor: DiskLruCache.Editor? = null
         try {
             editor = diskLruCache!!.edit(formattedKey)
-            if (editor == null) {
-                return
-            }
             if (writeBitmapToFile(bitmap, editor)) {
                 diskLruCache!!.flush()
                 editor.commit()
@@ -52,17 +49,14 @@ class DiskLruImageCache(context: Context, uniqueName: String, diskCacheSize: Int
         }
     }
 
-    override fun get(key: String?): Bitmap? {
+    override fun get(key: String): Bitmap? {
         val formattedKey = getDiskLruCacheFormattedString(key)
         var bitmap: Bitmap? = null
         try {
             diskLruCache!![formattedKey].use { snapshot ->
-                if (snapshot == null) {
-                    return null
-                }
-                val `in` = snapshot.getInputStream(0)
-                if (`in` != null) {
-                    val buffIn = BufferedInputStream(`in`, 8 * 1024)
+                snapshot?.let {
+                    val input = snapshot.getInputStream(0)
+                    val buffIn = BufferedInputStream(input, 8 * 1024)
                     bitmap = BitmapFactory.decodeStream(buffIn)
                 }
             }
@@ -72,7 +66,7 @@ class DiskLruImageCache(context: Context, uniqueName: String, diskCacheSize: Int
         return bitmap
     }
 
-    override fun contains(key: String?): Boolean {
+    override fun contains(key: String): Boolean {
         val formattedKey = getDiskLruCacheFormattedString(key)
         var contained = false
         try {
@@ -91,27 +85,24 @@ class DiskLruImageCache(context: Context, uniqueName: String, diskCacheSize: Int
         }
     }
 
-    private fun writeBitmapToFile(bitmap: Bitmap?, editor: DiskLruCache.Editor): Boolean {
+    private fun writeBitmapToFile(bitmap: Bitmap, editor: DiskLruCache.Editor): Boolean {
         try {
             BufferedOutputStream(editor.newOutputStream(0), 1024 * 8).use { out ->
-                val mCompressQuality = 70
-                return bitmap!!.compress(compressFormat, mCompressQuality, out)
+                return bitmap.compress(compressFormat, 100, out)
             }
         } catch (e: IOException) {
             return false
         }
     }
 
-    private fun getDiskCacheDir(context: Context, uniqueName: String): File {
-        return File(context.cacheDir.path + File.separator + uniqueName)
-    }
-
     companion object {
         private const val TAG = "DiskLruImageCache"
+
         private fun getDiskLruCacheFormattedString(str: String?): String {
             val formatted = str!!.replace("[^a-zA-Z0-9]".toRegex(), "").lowercase()
             return formatted.substring(0, if (formatted.length >= 120) 110 else formatted.length)
         }
+
     }
 
 }

@@ -21,7 +21,7 @@ class ItemNearbyPlace(context: Context): ConstraintLayout(context), IView {
     val address: TextView
     @BindWith(paths = ["NearbyPlace.opening_hours:OpeningHours", "NearbyPlaceWrapper.detail.opening_hours:OpeningHours"])
     val open: TextView
-    @BindWith(paths = ["NearbyPlace.price:String", "NearbyPlaceWrapper.detail.price_text:String"])
+    @BindWith(paths = ["NearbyPlace.price:String", "NearbyPlaceWrapper.detail.priceText:String"])
     val price: TextView
 
     init {

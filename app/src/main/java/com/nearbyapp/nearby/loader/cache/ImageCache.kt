@@ -2,9 +2,8 @@ package com.nearbyapp.nearby.loader.cache
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.os.Environment
-import com.nearbyapp.nearby.loader.cache.disklrucache.DiskLruImageCache
-import com.nearbyapp.nearby.loader.cache.memorycache.MemoryImageCache
+import com.nearbyapp.nearby.loader.cache.diskcache.ImageDiskCache
+import com.nearbyapp.nearby.loader.cache.memorycache.ImageMemoryCache
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -14,25 +13,21 @@ class ImageCache(context: Context) {
     private val diskLruImageCache: IImageCache
     private val memoryImageCache: IImageCache
 
-    private val outputFolder: File
-
     enum class CachingStrategy {
         ALL, MEMORY, DISK, NONE
     }
 
     init {
-        memoryImageCache = MemoryImageCache()
-        diskLruImageCache = DiskLruImageCache(context, IMAGE_CACHE_NAME, DISK_CACHE_SIZE)
-        outputFolder = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)!!.absolutePath)
+        memoryImageCache = ImageMemoryCache()
+        diskLruImageCache = ImageDiskCache(File(context.cacheDir.path + File.separator + "diskcache"), DISK_CACHE_SIZE)
     }
 
-    @Synchronized
-    operator fun get(s: String?): Bitmap? {
+    operator fun get(s: String): Bitmap? {
         return if (memoryImageCache.contains(s)) memoryImageCache[s] else diskLruImageCache[s]
     }
 
     @Synchronized
-    fun put(s: String, data: Bitmap?, cachingStrategy: CachingStrategy?) {
+    fun put(s: String, data: Bitmap, cachingStrategy: CachingStrategy?) {
         when (cachingStrategy) {
             CachingStrategy.ALL -> {
                 if (!memoryImageCache.contains(s)) {
@@ -57,7 +52,7 @@ class ImageCache(context: Context) {
         }
     }
 
-    fun contains(key: String?): Boolean {
+    fun contains(key: String): Boolean {
         return memoryImageCache.contains(key) || diskLruImageCache.contains(key)
     }
 
@@ -68,47 +63,21 @@ class ImageCache(context: Context) {
     }
 
     @Synchronized
-    fun dumps(baseName: String, images: List<String>): Boolean {
-        images.withIndex().iterator().forEach { link ->
-            val key = link.value
-            val fileName = getFileName(baseName, link.index)
-            try {
-                val bitmap = get(key)
-                val image = File(outputFolder, fileName)
-                val outputStream = FileOutputStream(image)
-                bitmap?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                outputStream.flush()
-                outputStream.close()
-            } catch (e: IOException) {
-                return false
-            }
-        }
-        return true
-    }
-
-    fun getDownloadedImage(path: String?): File? {
-        val image = File(outputFolder.absolutePath + "/$path")
-        return if (image.exists()) image else null
-    }
-
-    fun exist(path: String?): Boolean {
-        val image = File(outputFolder.absolutePath + "/$path")
-        return image.exists()
-    }
-
-    fun deleteDownloadedImage(id: String) {
-        val image = File(outputFolder.absolutePath + "/$id")
-        if (image.exists()) {
-            image.delete()
+    fun dumps(imageKey: String, fileName: String, outputFolder: File): Boolean {
+        return try {
+            val bitmap = get(imageKey)
+            val image = File(outputFolder, fileName)
+            val outputStream = FileOutputStream(image)
+            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+            true
+        } catch (e: IOException) {
+            false
         }
     }
 
     companion object {
-        private const val IMAGE_CACHE_NAME = "IImageCache"
-        private const val DISK_CACHE_SIZE = 1024 * 1024 * 250 // 250 mb
-
-        fun getFileName(id: String, index: Int): String {
-            return "$id-$index"
-        }
+        private const val DISK_CACHE_SIZE: Long = 1024 * 1024 * 250 // 250 mb
     }
 }

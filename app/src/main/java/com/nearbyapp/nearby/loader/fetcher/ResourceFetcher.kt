@@ -1,5 +1,6 @@
 package com.nearbyapp.nearby.loader.fetcher
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -7,19 +8,19 @@ import androidx.core.content.res.ResourcesCompat
 import com.nearbyapp.nearby.loader.ImageResult
 import com.nearbyapp.nearby.loader.Request
 
-class ResourceFetcher: ImageFetcher() {
+class ResourceFetcher(val context: Context): ImageFetcher() {
 
     override fun fetch(request: Request): ImageResult<Bitmap> {
         try {
             val resource = request.source().toInt()
 
-            var bitmap = BitmapFactory.decodeResource(request.context().resources, resource)
+            var bitmap = BitmapFactory.decodeResource(context.resources, resource)
 
             if (bitmap != null) {
                 return ImageResult.Success(bitmap)
             }
 
-            val drawable = ResourcesCompat.getDrawable(request.context().resources, resource, null)
+            val drawable = ResourcesCompat.getDrawable(context.resources, resource, null)
             val canvas = Canvas()
 
             if (drawable != null) {

@@ -8,9 +8,9 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
 
-abstract class ImageFetcher {
+abstract class ImageFetcher: Fetcher {
 
-    abstract fun fetch(request: Request): ImageResult<Bitmap>
+    abstract override fun fetch(request: Request): ImageResult<Bitmap>
 
     @Throws(IOException::class)
     open fun decodeByteArray(bytes: ByteArray?, requiredSize: Int): Bitmap? {

@@ -1,7 +1,6 @@
 package com.nearbyapp.nearby.viewmodel
 
 import android.app.Application
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.databinding.databinding.IData
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +16,7 @@ class SavedDetailViewModel(application: Application): AbstractDetailViewModel(ap
                 detail?.let {
                     val details: MutableList<IData?> = mutableListOf()
                     details.add(getImages(it.photos?.filter { photo ->
-                        photo.path != null
+                        photo.id != null
                     }))
                     details.add(it)
                     details.add(getReviews(it))

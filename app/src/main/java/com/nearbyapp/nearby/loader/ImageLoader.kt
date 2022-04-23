@@ -2,86 +2,100 @@ package com.nearbyapp.nearby.loader
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import com.nearbyapp.nearby.loader.cache.ImageCache
+import com.nearbyapp.nearby.loader.fetcher.Fetcher
 import com.nearbyapp.nearby.loader.fetcher.FileFetcher
 import com.nearbyapp.nearby.loader.fetcher.ResourceFetcher
 import com.nearbyapp.nearby.loader.fetcher.URLFetcher
-import com.nearbyapp.nearby.model.nearby.Photo
 import kotlinx.coroutines.*
 import java.io.File
 
-class ImageLoader(application: Application) {
+class ImageLoader(val application: Application) {
 
     private val coroutineScope: CoroutineScope = CoroutineScope(Job() + Dispatchers.IO)
+
+    companion object {
+        lateinit var INSTANCE: ImageLoader
+
+        fun get(): Builder {
+            return Builder(INSTANCE)
+        }
+    }
 
     private val imageCache: ImageCache = ImageCache(application)
 
     private val urlFetcher: URLFetcher = URLFetcher()
     private val fileFetcher: FileFetcher = FileFetcher()
-    private val resourceFetcher: ResourceFetcher = ResourceFetcher()
+    private val resourceFetcher: ResourceFetcher = ResourceFetcher(application)
 
     private val requestBuilder: RequestBuilder = RequestBuilder(application)
     private val targetBuilder: TargetBuilder = TargetBuilder()
 
-    private var listener: Listener? = null
-
-    interface Listener {
-        fun onWritingStarted()
-        fun onWritingCompleted()
-        fun onWritingFailed()
+    init {
+        INSTANCE = this
     }
 
-    fun load(url: String, view: ImageView?) {
-        coroutineScope.launch {
-            val target = targetBuilder.create(view)
-            val request = requestBuilder.create(target, url)
-            val result: ImageResult<Bitmap> = if (cached(request.source())) {
-                ImageResult.Success(imageCache[request.source()]!!)
-            } else {
-                urlFetcher.fetch(request)
-            }
-            submit(request, result)
+    class Builder(val loader: ImageLoader) {
+        private var request: Request? = null
+        private var target: Target? = null
+        private var fetcher: Fetcher? = null
+        private var cache: ImageCache.CachingStrategy = ImageCache.CachingStrategy.ALL
+
+        fun into(target: Target) = apply { this.target = target }
+
+        fun into(view: ImageView?) = apply { this.target = loader.targetBuilder.create(view)}
+
+        fun into(view: ImageView?, placeHolder: Drawable) = apply {
+            this.target = loader.targetBuilder.create(view, placeHolder)
         }
-    }
 
-    fun load(file: File, view: ImageView?) {
-        coroutineScope.launch {
-            val target = targetBuilder.create(view)
-            val request = requestBuilder.create(target, file)
-            val result: ImageResult<Bitmap> = if (cached(request.source())) {
-                ImageResult.Success(imageCache[request.source()]!!)
-            } else {
-                fileFetcher.fetch(request)
-            }
-            submit(request, result)
+        fun load(url: String) = apply {
+            this.request = loader.requestBuilder.create(url)
+            this.fetcher = loader.urlFetcher
         }
-    }
 
-    fun load(res: Int, view: ImageView?) {
-        coroutineScope.launch {
-            val target = targetBuilder.create(view)
-            val request = requestBuilder.create(target, res)
-            val result: ImageResult<Bitmap> = if (cached(request.source())) {
-                ImageResult.Success(imageCache[request.source()]!!)
-            } else {
-                resourceFetcher.fetch(request)
-            }
-            submit(request, result)
+        fun load(file: File) = apply {
+            this.request = loader.requestBuilder.create(file)
+            this.fetcher = loader.fileFetcher
         }
+
+        fun load(res: Int) = apply {
+            this.request = loader.requestBuilder.create(res)
+            this.fetcher = loader.resourceFetcher
+        }
+
+        fun cache(cache: ImageCache.CachingStrategy) = apply {
+            this.cache = cache
+        }
+
+        fun run() {
+            safe(request, target, fetcher) { request, target, fetcher ->
+                loader.load(request, target, fetcher, cache)
+            }
+        }
+
+        private inline fun <T1: Any, T2: Any, T3: Any, R: Any> safe(p1: T1?, p2: T2?, p3: T3?, block: (T1, T2, T3) -> R?): R? {
+            return if (p1 != null && p2 != null && p3 != null) block(p1, p2, p3) else null
+        }
+
     }
 
-    fun dumps(baseName: String, images: List<Photo>) {
-        listener?.onWritingStarted()
-        CoroutineScope(Dispatchers.Main).launch {
-            val success: Boolean = withContext(coroutineScope.coroutineContext) {
-                imageCache.dumps(baseName, images.map { it.link })
+    private fun load(
+        request: Request,
+        target: Target,
+        fetcher: Fetcher,
+        cache: ImageCache.CachingStrategy
+    ) {
+        target.onProcessing()
+        coroutineScope.launch {
+            val result: ImageResult<Bitmap> = imageCache[request.source()]?.let {
+                ImageResult.Success(it)
+            } ?: run {
+                fetcher.fetch(request)
             }
-            if (success) {
-                listener?.onWritingCompleted()
-            } else {
-                listener?.onWritingFailed()
-            }
+            submit(request, target, result, cache)
         }
     }
 
@@ -98,37 +112,25 @@ class ImageLoader(application: Application) {
         return imageCache
     }
 
-    private fun cached(source: String): Boolean {
-        return imageCache[source] != null
-    }
-
-    private suspend fun submit(request: Request, result: ImageResult<Bitmap>) {
-        withContext(Dispatchers.Main) {
-            when (result) {
-                is ImageResult.Success -> {
-                    imageCache.put(request.source(), result.value, request.caching())
-                    request.target().onSuccess(result.value)
+    private suspend fun submit(
+        request: Request,
+        target: Target,
+        result: ImageResult<Bitmap>,
+        cache: ImageCache.CachingStrategy
+    ) {
+        when (result) {
+            is ImageResult.Success -> {
+                imageCache.put(request.source(), result.value, cache)
+                withContext(Dispatchers.Main) {
+                    target.onSuccess(result.value)
                 }
-                is ImageResult.Error -> {
-                    request.target().onError()
+            }
+            is ImageResult.Error -> {
+                withContext(Dispatchers.Main) {
+                    target.onError()
                 }
             }
         }
-    }
-
-    fun registerListener(listener: Listener) {
-        this.listener = listener
-    }
-
-    fun unregisterListener() {
-        this.listener = null
-    }
-
-    enum class Status {
-        IDLE,
-        WRITING,
-        COMPLETED,
-        ERROR
     }
 
 }

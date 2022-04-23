@@ -17,9 +17,9 @@ class ItemDetail : ConstraintLayout, IView {
     var name: TextView
     @BindWith(paths = ["Detail.formatted_address:String"])
     var address: TextView
-    @BindWith(paths = ["Detail.rating_text:String"])
+    @BindWith(paths = ["Detail.ratingText:String"])
     var rating: TextView
-    @BindWith(paths = ["Detail.price_text:String"])
+    @BindWith(paths = ["Detail.priceText:String"])
     var price: TextView
 
     constructor(context: Context) : super(context)

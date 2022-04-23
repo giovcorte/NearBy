@@ -20,6 +20,7 @@ class AppController: Application(), OnMapsSdkInitializedCallback {
     lateinit var clipboard: Clipboard
     lateinit var preferencesManager: PreferencesManager
     lateinit var imageLoader: ImageLoader
+    lateinit var imageStorageHelper: ImageStorageHelper
 
     override fun onCreate() {
         super.onCreate()
@@ -32,10 +33,15 @@ class AppController: Application(), OnMapsSdkInitializedCallback {
         clipboard = Clipboard()
         preferencesManager = PreferencesManager(this.getSharedPreferences("NearByPreferences", Context.MODE_PRIVATE))
         imageLoader = ImageLoader(this)
+        imageStorageHelper = ImageStorageHelper(getImageFolder(), imageLoader.cache())
     }
 
     override fun onMapsSdkInitialized(p0: MapsInitializer.Renderer) {
 
+    }
+
+    private fun getImageFolder(): File {
+        return File(this.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)!!.absolutePath)
     }
 
 }

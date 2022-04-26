@@ -38,7 +38,7 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
         val realKey = getFormattedKey(key)
         val entry = entries[realKey] ?: return false
 
-        return entry.editor == null
+        return entry.editor == null && entry.readable
     }
 
     @Synchronized
@@ -61,21 +61,57 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
     }
 
     @Synchronized
-    private fun commitEdit(editor: Editor, success: Boolean) {
+    fun clear() {
+        val allEntries = entries.values.toList()
+        for (entry in allEntries) {
+            entry.editor?.abort()
+            removeEntry(entry)
+        }
+        rebuildJournalFile()
+    }
+
+    @Synchronized
+    fun close() {
+        val allEntries = entries.values.toList()
+        for (entry in allEntries) {
+            entry.editor?.abort()
+        }
+        journalWriter.flush()
+        journalWriter.close()
+    }
+
+    @Synchronized
+    private fun commitEntryEdit(editor: Editor, success: Boolean) {
         val entry = editor.entry
         val cleanFile = entry.getCleanFile()
         val dirtyFile = entry.getDirtyFile()
 
         if (success) {
             renameFile(dirtyFile, cleanFile)
-            entry.readable = true
-            size += getFileSize(entry.key)
-            writeJournalLine(CLEAN_ENTRY, entry)
+            finalizeEntry(entry)
         } else {
             removeEntry(entry)
         }
 
         clearLastRecentlyUsed()
+    }
+
+    private fun finalizeEntry(entry: Entry) {
+        entry.readable = true
+        size += entry.getCleanFile().length()
+        writeJournalLine(CLEAN_ENTRY, entry)
+    }
+
+    private fun removeEntry(entry: Entry) {
+        writeJournalLine(REMOVE_ENTRY, entry)
+        journalNUOCount++
+        entries.remove(entry.key)
+
+        val cleanFile = entry.getCleanFile()
+        val dirtyFile = entry.getDirtyFile()
+        size -= cleanFile.length()
+        cleanFile.delete()
+        dirtyFile.delete()
     }
 
     private fun clearLastRecentlyUsed() {
@@ -95,9 +131,13 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
         }
     }
 
+    /**
+     * Journal methods
+     */
+
     @Throws(IOException::class)
     private fun openJournalFile() {
-        val file = getOrCreateFile(JOURNAL_FILE_NAME, false)
+        val file = getOrCreateJournalFile(false)
 
         journalFile = file
         journalWriter = FileOutputStream(journalFile, true).bufferedWriter()
@@ -112,12 +152,13 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
                 val type = line.substring(0, line.indexOf(" "))
                 val key = line.substring(line.indexOf(" ") + 1)
 
+                val entry = entries.getOrPut(key) { Entry(key) }
+
                 if (type == CLEAN_ENTRY && isEntryKeyValid(key)) {
-                    entries[key] = Entry(key)
-                    size += getFileSize(key)
+                    entry.editor = null
+                    size += entry.getCleanFile().length()
                 } else if (type == DIRTY_ENTRY && isEntryKeyValid(key)) {
-                    entries[key] = Entry(key)
-                    size -= getFileSize(key)
+                    entry.editor = Editor(entry)
                     journalNUOCount++
                 } else if (type == REMOVE_ENTRY && isEntryKeyValid(key)) {
                     entries.remove(key)
@@ -146,7 +187,7 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
         journalWriter.flush()
         journalWriter.close()
 
-        val file = getOrCreateFile(JOURNAL_FILE_NAME, true)
+        val file = getOrCreateJournalFile(true)
         journalFile = file
         journalWriter = FileOutputStream(journalFile, true).bufferedWriter()
 
@@ -160,35 +201,13 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
     }
 
     private fun writeJournalLine(entryState: String, entry: Entry) {
-        synchronized(this.journalWriter) {
-            journalWriter.append(entryState + " " + entry.key)
-            journalWriter.newLine()
-            journalWriter.flush()
-        }
+        journalWriter.append(entryState + " " + entry.key)
+        journalWriter.newLine()
+        journalWriter.flush()
     }
 
-    private fun removeEntry(entry: Entry) {
-        writeJournalLine(REMOVE_ENTRY, entry)
-        journalNUOCount++
-        entries.remove(entry.key)
-
-        val cleanFile = entry.getCleanFile()
-        val dirtyFile = entry.getDirtyFile()
-        size -= cleanFile.length()
-        cleanFile.delete()
-        dirtyFile.delete()
-    }
-
-    private fun renameFile(fileFrom: File, fileTo: File) {
-        if (fileTo.exists()) {
-            fileTo.delete()
-        }
-
-        fileFrom.renameTo(fileTo)
-    }
-
-    private fun getOrCreateFile(fileName: String, overwriteIfCreate: Boolean) : File {
-        val file = File(folder.absolutePath + FILE_SEPARATOR + fileName)
+    private fun getOrCreateJournalFile(overwriteIfCreate: Boolean) : File {
+        val file = File(folder.absolutePath + FILE_SEPARATOR + JOURNAL_FILE_NAME)
 
         if (!file.exists()) {
             folder.mkdirs()
@@ -202,18 +221,21 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
         return file
     }
 
-    private fun getFileSize(fileName: String) : Long {
-        val file = File(folder.absolutePath + FILE_SEPARATOR + fileName)
-        return if (file.exists()) {
-            file.length()
-        } else {
-            0
-        }
-    }
+    /**
+     * Files utility methods
+     */
 
     private fun existFile(key: String) : Boolean {
         val file = File(folder.absolutePath + FILE_SEPARATOR + key)
         return file.exists()
+    }
+
+    private fun renameFile(fileFrom: File, fileTo: File) {
+        if (fileTo.exists()) {
+            fileTo.delete()
+        }
+
+        fileFrom.renameTo(fileTo)
     }
 
     private fun getFormattedKey(key: String): String {
@@ -221,23 +243,9 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
         return formatted.substring(0, if (formatted.length >= 120) 110 else formatted.length)
     }
 
-    @Synchronized
-    fun clear() {
-        for (entry in entries.values) {
-            entry.editor?.abort()
-            removeEntry(entry)
-        }
-        rebuildJournalFile()
-    }
-
-    @Synchronized
-    fun close() {
-        for (entry in entries.values) {
-            entry.editor?.abort()
-        }
-        journalWriter.flush()
-        journalWriter.close()
-    }
+    /**
+     * Inner classes
+     */
 
     inner class Entry(val key: String) {
         var readable = existFile(key)
@@ -262,7 +270,7 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
         }
 
         fun outputStream(): OutputStream? {
-            synchronized(this@DiskCache) {
+            synchronized(this@DiskCache.folder) {
                 if (entry.editor != this) {
                     return null
                 }
@@ -284,9 +292,9 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
             outputStream?.let {
                 it.flush()
                 it.close()
-                commitEdit(this, !it.hasError)
+                commitEntryEdit(this, !it.hasError)
             } ?: run {
-                commitEdit(this, false)
+                commitEntryEdit(this, false)
             }
 
             entry.editor = null
@@ -294,7 +302,7 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
 
         fun abort() {
             outputStream?.close()
-            commitEdit(this, false)
+            commitEntryEdit(this, false)
         }
 
     }
@@ -354,6 +362,10 @@ class DiskCache(private val folder: File, private val maxSize: Long) {
         }
 
     }
+
+    /**
+     * Constants
+     */
 
     companion object {
         const val CLEAN_ENTRY = "CLEAN"

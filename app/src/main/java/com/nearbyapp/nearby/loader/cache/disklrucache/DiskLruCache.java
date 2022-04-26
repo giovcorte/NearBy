@@ -94,7 +94,7 @@ public final class DiskLruCache implements Closeable {
   private long size = 0;
   private Writer journalWriter;
   private final LinkedHashMap<String, Entry> lruEntries =
-          new LinkedHashMap<String, Entry>(0, 0.75f, true);
+          new LinkedHashMap<>(0, 0.75f, true);
   private int redundantOpCount;
 
   /**
@@ -106,7 +106,7 @@ public final class DiskLruCache implements Closeable {
 
   /** This cache uses a single background thread to evict entries. */
   final ThreadPoolExecutor executorService =
-          new ThreadPoolExecutor(0, 1, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+          new ThreadPoolExecutor(0, 1, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
   private final Callable<Void> cleanupCallable = new Callable<Void>() {
     public Void call() throws Exception {
       synchronized (DiskLruCache.this) {
@@ -261,7 +261,7 @@ public final class DiskLruCache implements Closeable {
     } else if (secondSpace == -1 && firstSpace == DIRTY.length() && line.startsWith(DIRTY)) {
       entry.currentEditor = new Editor(entry);
     } else if (secondSpace == -1 && firstSpace == READ.length() && line.startsWith(READ)) {
-      // This work was already done by calling lruEntries.get().
+      //lruEntries.get(key);
     } else {
       throw new IOException("unexpected journal line: " + line);
     }
@@ -299,9 +299,8 @@ public final class DiskLruCache implements Closeable {
       journalWriter.close();
     }
 
-    Writer writer = new BufferedWriter(
-            new OutputStreamWriter(new FileOutputStream(journalFileTmp), Util.US_ASCII));
-    try {
+    try (Writer writer = new BufferedWriter(
+            new OutputStreamWriter(new FileOutputStream(journalFileTmp), Util.US_ASCII))) {
       writer.write(MAGIC);
       writer.write("\n");
       writer.write(VERSION_1);
@@ -319,8 +318,6 @@ public final class DiskLruCache implements Closeable {
           writer.write(CLEAN + ' ' + entry.key + entry.getLengths() + '\n');
         }
       }
-    } finally {
-      writer.close();
     }
 
     if (journalFile.exists()) {
@@ -386,7 +383,7 @@ public final class DiskLruCache implements Closeable {
     }
 
     redundantOpCount++;
-    journalWriter.append(READ + ' ' + key + '\n');
+    journalWriter.append(READ + ' ').append(key).append(String.valueOf('\n'));
     if (journalRebuildRequired()) {
       executorService.submit(cleanupCallable);
     }
@@ -579,7 +576,7 @@ public final class DiskLruCache implements Closeable {
     if (journalWriter == null) {
       return; // Already closed.
     }
-    for (Entry entry : new ArrayList<Entry>(lruEntries.values())) {
+    for (Entry entry : new ArrayList<>(lruEntries.values())) {
       if (entry.currentEditor != null) {
         entry.currentEditor.abort();
       }
@@ -665,7 +662,7 @@ public final class DiskLruCache implements Closeable {
 
   private static final OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) {
       // Eat all writes silently. Nom nom.
     }
   };
@@ -686,7 +683,7 @@ public final class DiskLruCache implements Closeable {
      * Returns an unbuffered input stream to read the last committed value,
      * or null if no value has been committed.
      */
-    public InputStream newInputStream(int index) throws IOException {
+    public InputStream newInputStream(int index) {
       synchronized (DiskLruCache.this) {
         if (entry.currentEditor != this) {
           throw new IllegalStateException();
@@ -718,7 +715,7 @@ public final class DiskLruCache implements Closeable {
      * {@link #commit} is called. The returned output stream does not throw
      * IOExceptions.
      */
-    public OutputStream newOutputStream(int index) throws IOException {
+    public OutputStream newOutputStream(int index) {
       if (index < 0 || index >= valueCount) {
         throw new IllegalArgumentException("Expected index " + index + " to "
                 + "be greater than 0 and less than the maximum value count "
@@ -850,7 +847,7 @@ public final class DiskLruCache implements Closeable {
       this.lengths = new long[valueCount];
     }
 
-    public String getLengths() throws IOException {
+    public String getLengths() {
       StringBuilder result = new StringBuilder();
       for (long size : lengths) {
         result.append(' ').append(size);

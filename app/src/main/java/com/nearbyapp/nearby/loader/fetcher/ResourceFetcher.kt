@@ -12,7 +12,7 @@ class ResourceFetcher(val context: Context): ImageFetcher() {
 
     override fun fetch(request: Request): ImageResult<Bitmap> {
         try {
-            val resource = request.source().toInt()
+            val resource = request.asString().toInt()
 
             var bitmap = BitmapFactory.decodeResource(context.resources, resource)
 

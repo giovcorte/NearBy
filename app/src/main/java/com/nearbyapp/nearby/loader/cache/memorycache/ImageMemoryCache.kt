@@ -27,6 +27,7 @@ class ImageMemoryCache : IImageCache {
         return cache.containsKey(key)
     }
 
+    @Synchronized
     override fun put(key: String, bitmap: Bitmap) {
         if (cache.containsKey(key)) {
             size -= getSizeInBytes(cache[key])

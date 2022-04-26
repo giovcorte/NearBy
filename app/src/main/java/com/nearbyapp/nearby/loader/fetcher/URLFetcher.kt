@@ -12,7 +12,7 @@ class URLFetcher: ImageFetcher() {
     override fun fetch(request: Request): ImageResult<Bitmap> {
         try {
             // InputStream from url
-            val imageUrl = URL(request.source())
+            val imageUrl = URL(request.asString())
             val conn = imageUrl.openConnection() as HttpURLConnection
             val inputStream = conn.inputStream
 

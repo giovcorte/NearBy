@@ -251,6 +251,9 @@ object BindingMethods {
     @BindingMethod
     fun bindNearbyPlace(@View view: ItemNearbyPlace?, @Data data: NearbyPlace?, @Inject navigation: NavigationManager, @Inject clipboard: Clipboard) {
         view?.image?.visibility = if (data?.thumbnail != null) VISIBLE else GONE
+        data?.thumbnail?.let {
+            ImageLoader.get().load(it).into(view?.image).tag(data.place_id).run()
+        }
         view?.setOnClickListener {
             clipboard.putData("name", data!!.name)
             clipboard.putData("id", data.place_id)

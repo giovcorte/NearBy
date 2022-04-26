@@ -58,6 +58,7 @@ class DiskLruImageCache(context: Context, uniqueName: String, diskCacheSize: Int
                     val input = snapshot.getInputStream(0)
                     val buffIn = BufferedInputStream(input, 8 * 1024)
                     bitmap = BitmapFactory.decodeStream(buffIn)
+                    it.close()
                 }
             }
         } catch (e: IOException) {

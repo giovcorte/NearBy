@@ -42,6 +42,7 @@ class ImageLoader(val application: Application) {
         private var target: Target? = null
         private var fetcher: Fetcher? = null
         private var cache: ImageCache.CachingStrategy = ImageCache.CachingStrategy.ALL
+        private var tag: String? = null
 
         fun into(target: Target) = apply { this.target = target }
 
@@ -54,25 +55,32 @@ class ImageLoader(val application: Application) {
         fun load(url: String) = apply {
             this.request = loader.requestBuilder.create(url)
             this.fetcher = loader.urlFetcher
+            this.cache = ImageCache.CachingStrategy.ALL
         }
 
         fun load(file: File) = apply {
             this.request = loader.requestBuilder.create(file)
             this.fetcher = loader.fileFetcher
+            this.cache = ImageCache.CachingStrategy.NONE
         }
 
         fun load(res: Int) = apply {
             this.request = loader.requestBuilder.create(res)
             this.fetcher = loader.resourceFetcher
+            this.cache = ImageCache.CachingStrategy.NONE
         }
 
         fun cache(cache: ImageCache.CachingStrategy) = apply {
             this.cache = cache
         }
 
+        fun tag(tag: String) = apply {
+            this.tag = tag
+        }
+
         fun run() {
             safe(request, target, fetcher) { request, target, fetcher ->
-                loader.load(request, target, fetcher, cache)
+                loader.load(request, target, fetcher, cache, tag)
             }
         }
 
@@ -86,16 +94,19 @@ class ImageLoader(val application: Application) {
         request: Request,
         target: Target,
         fetcher: Fetcher,
-        cache: ImageCache.CachingStrategy
+        cache: ImageCache.CachingStrategy,
+        tag: String?
     ) {
         target.onProcessing()
         coroutineScope.launch {
-            val result: ImageResult<Bitmap> = imageCache[request.source()]?.let {
+            val cacheKey: String = tag ?: request.asString()
+
+            val result: ImageResult<Bitmap> = imageCache[cacheKey]?.let {
                 ImageResult.Success(it)
             } ?: run {
                 fetcher.fetch(request)
             }
-            submit(request, target, result, cache)
+            submit(target, result, cache, cacheKey)
         }
     }
 
@@ -113,14 +124,14 @@ class ImageLoader(val application: Application) {
     }
 
     private suspend fun submit(
-        request: Request,
         target: Target,
         result: ImageResult<Bitmap>,
-        cache: ImageCache.CachingStrategy
+        cache: ImageCache.CachingStrategy,
+        cacheKey: String
     ) {
         when (result) {
             is ImageResult.Success -> {
-                imageCache.put(request.source(), result.value, cache)
+                imageCache.put(cacheKey, result.value, cache)
                 withContext(Dispatchers.Main) {
                     target.onSuccess(result.value)
                 }

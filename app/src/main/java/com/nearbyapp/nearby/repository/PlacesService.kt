@@ -15,7 +15,7 @@ interface PlacesService {
     suspend fun getPlaces(
         @Query("location") location: String?,
         @Query("radius") radius: String?,
-        @Query("keyword") keyword: String?,
+        @Query("query") keyword: String?,
         @Query("key") key: String?
     ): NearbySearchResponse?
 

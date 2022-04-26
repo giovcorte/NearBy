@@ -11,7 +11,7 @@ class FileFetcher: ImageFetcher() {
 
     override fun fetch(request: Request): ImageResult<Bitmap> {
         try {
-            val inputStream = FileInputStream(File(request.source()))
+            val inputStream = FileInputStream(File(request.asString()))
             val byteArrayOutputStream = ByteArrayOutputStream()
             val buffer = ByteArray(1024)
             var len: Int

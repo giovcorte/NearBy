@@ -2,6 +2,7 @@ package com.nearbyapp.nearby.loader.cache
 
 import android.content.Context
 import android.graphics.Bitmap
+import com.nearbyapp.nearby.loader.cache.diskcache.DiskCache
 import com.nearbyapp.nearby.loader.cache.diskcache.ImageDiskCache
 import com.nearbyapp.nearby.loader.cache.memorycache.ImageMemoryCache
 import java.io.File
@@ -19,14 +20,13 @@ class ImageCache(context: Context) {
 
     init {
         memoryImageCache = ImageMemoryCache()
-        diskLruImageCache = ImageDiskCache(File(context.cacheDir.path + File.separator + "diskcache"), DISK_CACHE_SIZE)
+        diskLruImageCache = ImageDiskCache(DiskCache(File(context.cacheDir.path + File.separator + "imagediskcache"), DISK_CACHE_SIZE))
     }
 
     operator fun get(s: String): Bitmap? {
-        return if (memoryImageCache.contains(s)) memoryImageCache[s] else diskLruImageCache[s]
+        return /*if (memoryImageCache.contains(s)) memoryImageCache[s] else*/ diskLruImageCache[s]
     }
 
-    @Synchronized
     fun put(s: String, data: Bitmap, cachingStrategy: CachingStrategy?) {
         when (cachingStrategy) {
             CachingStrategy.ALL -> {
@@ -53,7 +53,7 @@ class ImageCache(context: Context) {
     }
 
     fun contains(key: String): Boolean {
-        return memoryImageCache.contains(key) || diskLruImageCache.contains(key)
+        return /*memoryImageCache.contains(key) ||*/ diskLruImageCache.contains(key)
     }
 
     @Synchronized

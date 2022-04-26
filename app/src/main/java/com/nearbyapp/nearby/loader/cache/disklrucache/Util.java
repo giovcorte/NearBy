@@ -45,7 +45,7 @@ public final class Util {
     }
   }
 
-  public static void closeQuietly(/*Auto*/Closeable closeable) {
+  public static void closeQuietly(Closeable closeable) {
     if (closeable != null) {
       try {
         closeable.close();

@@ -2,7 +2,8 @@ package com.nearbyapp.nearby.loader.cache
 
 import android.content.Context
 import android.graphics.Bitmap
-import com.nearbyapp.nearby.loader.cache.disklrucache.DiskLruImageCache
+import com.nearbyapp.nearby.loader.cache.diskcache.DiskCache
+import com.nearbyapp.nearby.loader.cache.diskcache.ImageDiskCache
 import com.nearbyapp.nearby.loader.cache.memorycache.ImageMemoryCache
 import java.io.File
 import java.io.FileOutputStream
@@ -19,19 +20,22 @@ class ImageCache(context: Context) {
 
     init {
         memoryImageCache = ImageMemoryCache()
-        diskLruImageCache = DiskLruImageCache(context, "imagecache")
+        diskLruImageCache = ImageDiskCache(DiskCache(File(context.cacheDir.path + File.separator + "imagescache"), 1024 * 1024 * 20))//DiskLruImageCache(context, "imagecache")
     }
 
     operator fun get(s: String): Bitmap? {
-        return if (memoryImageCache.contains(s)) memoryImageCache[s] else diskLruImageCache[s]
+        return /*if (memoryImageCache.contains(s)) memoryImageCache[s] else*/ diskLruImageCache[s]
     }
 
     fun put(s: String, data: Bitmap, cachingStrategy: CachingStrategy?) {
         when (cachingStrategy) {
             CachingStrategy.ALL -> {
+                /*
                 if (!memoryImageCache.contains(s)) {
                     memoryImageCache.put(s, data)
                 }
+
+                 */
 
                 diskLruImageCache.put(s, data)
             }

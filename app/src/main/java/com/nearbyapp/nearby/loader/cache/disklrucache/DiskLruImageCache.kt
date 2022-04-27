@@ -11,7 +11,7 @@ import java.io.OutputStream
 
 class DiskLruImageCache(context: Context, uniqueName: String) : IImageCache {
 
-    private val size: Long = 1024 * 1024 * 250 // 20 mb
+    private val size: Long = 1024 * 1024 * 20 // 20 mb
 
     private var diskLruCache: DiskLruCache = DiskLruCache(
         File(context.cacheDir.path + File.separator + uniqueName),

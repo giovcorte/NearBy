@@ -2,8 +2,7 @@ package com.nearbyapp.nearby.loader.cache
 
 import android.content.Context
 import android.graphics.Bitmap
-import com.nearbyapp.nearby.loader.cache.diskcache.DiskCache
-import com.nearbyapp.nearby.loader.cache.diskcache.ImageDiskCache
+import com.nearbyapp.nearby.loader.cache.disklrucache.DiskLruImageCache
 import com.nearbyapp.nearby.loader.cache.memorycache.ImageMemoryCache
 import java.io.File
 import java.io.FileOutputStream
@@ -20,11 +19,11 @@ class ImageCache(context: Context) {
 
     init {
         memoryImageCache = ImageMemoryCache()
-        diskLruImageCache = ImageDiskCache(DiskCache(File(context.cacheDir.path + File.separator + "imagediskcache"), DISK_CACHE_SIZE))
+        diskLruImageCache = DiskLruImageCache(context, "imagecache")
     }
 
     operator fun get(s: String): Bitmap? {
-        return /*if (memoryImageCache.contains(s)) memoryImageCache[s] else*/ diskLruImageCache[s]
+        return if (memoryImageCache.contains(s)) memoryImageCache[s] else diskLruImageCache[s]
     }
 
     fun put(s: String, data: Bitmap, cachingStrategy: CachingStrategy?) {
@@ -33,9 +32,8 @@ class ImageCache(context: Context) {
                 if (!memoryImageCache.contains(s)) {
                     memoryImageCache.put(s, data)
                 }
-                if (!diskLruImageCache.contains(s)) {
-                    diskLruImageCache.put(s, data)
-                }
+
+                diskLruImageCache.put(s, data)
             }
             CachingStrategy.DISK -> if (diskLruImageCache[s] == null) {
                 if (!diskLruImageCache.contains(s)) {
@@ -75,9 +73,5 @@ class ImageCache(context: Context) {
         } catch (e: IOException) {
             false
         }
-    }
-
-    companion object {
-        private const val DISK_CACHE_SIZE: Long = 1024 * 1024 * 250 // 250 mb
     }
 }

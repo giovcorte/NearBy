@@ -14,7 +14,7 @@ import java.io.File
 
 class ImageLoader(val application: Application) {
 
-    private val coroutineScope: CoroutineScope = CoroutineScope(Job() + Dispatchers.IO)
+    private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         lateinit var INSTANCE: ImageLoader

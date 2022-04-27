@@ -1,58 +1,53 @@
-package com.nearbyapp.nearby.loader.cache.disklrucache;
+package com.nearbyapp.nearby.loader.cache.disklrucache
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.io.*
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
-public final class Util {
-  public static final Charset US_ASCII = StandardCharsets.US_ASCII;
-  public static final Charset UTF_8 = StandardCharsets.UTF_8;
+object Util {
 
-  private Util() {
+    @JvmField
+    val US_ASCII: Charset = StandardCharsets.US_ASCII
+    @JvmField
+    val UTF_8: Charset = StandardCharsets.UTF_8
 
-  }
-
-  public static String readFully(Reader reader) throws IOException {
-    try {
-      StringWriter writer = new StringWriter();
-      char[] buffer = new char[1024];
-      int count;
-      while ((count = reader.read(buffer)) != -1) {
-        writer.write(buffer, 0, count);
-      }
-      return writer.toString();
-    } finally {
-      reader.close();
+    @JvmStatic
+    @Throws(IOException::class)
+    fun readFully(reader: Reader): String {
+        return reader.use { reader1 ->
+            val writer = StringWriter()
+            val buffer = CharArray(1024)
+            var count: Int
+            while (reader1.read(buffer).also { count = it } != -1) {
+                writer.write(buffer, 0, count)
+            }
+            writer.toString()
+        }
     }
-  }
 
-  public static void deleteContents(File dir) throws IOException {
-    File[] files = dir.listFiles();
-    if (files == null) {
-      throw new IOException("not a readable directory: " + dir);
+    @JvmStatic
+    @Throws(IOException::class)
+    fun deleteContents(dir: File) {
+        val files = dir.listFiles() ?: throw IOException("not a readable directory: $dir")
+        for (file in files) {
+            if (file.isDirectory) {
+                deleteContents(file)
+            }
+            if (!file.delete()) {
+                throw IOException("failed to delete file: $file")
+            }
+        }
     }
-    for (File file : files) {
-      if (file.isDirectory()) {
-        deleteContents(file);
-      }
-      if (!file.delete()) {
-        throw new IOException("failed to delete file: " + file);
-      }
-    }
-  }
 
-  public static void closeQuietly(Closeable closeable) {
-    if (closeable != null) {
-      try {
-        closeable.close();
-      } catch (RuntimeException rethrown) {
-        throw rethrown;
-      } catch (Exception ignored) {
-      }
+    @JvmStatic
+    fun closeQuietly(closeable: Closeable?) {
+        if (closeable != null) {
+            try {
+                closeable.close()
+            } catch (rethrown: RuntimeException) {
+                throw rethrown
+            } catch (ignored: Exception) {
+            }
+        }
     }
-  }
 }

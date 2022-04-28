@@ -1,13 +1,24 @@
 package com.nearbyapp.nearby.loader.cache.diskcache
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
-import java.io.File
+import kotlinx.coroutines.*
+import java.io.*
+import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class DiskCache(val folder: File, private val maxSize: Long) {
+class DiskCache(
+    val folder: File,
+    private val maxSize: Long,
+    private val appVersion: Int
+) : Closeable {
+
+    private var initialized = false
+    private var closed = false
+
+    private val journal = File(folder.absolutePath + File.separator + JOURNAL)
+    private val journalTmp = File(folder.absolutePath + File.separator + JOURNAL_TMP)
+
+    private var operationsSinceRewrite = 0
+    private var journalWriter: BufferedWriter? = null
 
     private var size = 0L
     private val entries = LinkedHashMap<String, Entry>(0, 0.75f, true)
@@ -15,35 +26,236 @@ class DiskCache(val folder: File, private val maxSize: Long) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
 
     init {
-        folder.listFiles()?.forEach { file ->
-            val entry = Entry(file.name)
-            entry.readable = true
-            entries[file.name] = entry
+        initialize()
+    }
+
+    /**
+     * Journal methods
+     */
+
+    @Synchronized
+    private fun initialize() {
+        if (initialized) {
+            return
+        }
+
+        folder.mkdirs()
+        journalTmp.delete()
+
+        if (journal.exists()) {
+            try {
+                readJournal()
+                processJournal()
+                initialized = true
+                return
+            } catch (_: IOException) {
+
+            }
+
+            try {
+                delete()
+            } finally {
+                closed = false
+            }
+        }
+
+        writeJournal()
+        initialized = true
+    }
+
+    private fun readJournal() {
+        BufferedReader(FileReader(journal)).use { bufferedReader ->
+            val version = bufferedReader.readLine()
+            val start = bufferedReader.readLine()
+
+            if (version != appVersion.toString() || start != JOURNAL_ENTRIES_START) {
+                throw IOException()
+            }
+
+            var lineCount = 0
+            var currentLine = bufferedReader.readLine()
+            var hasError = false
+            while (currentLine != null) {
+                try {
+                    readJournalLine(currentLine)
+                    currentLine = bufferedReader.readLine()
+                    lineCount++
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    hasError = true
+                    break
+                }
+            }
+
+            operationsSinceRewrite = lineCount - entries.size
+
+            if (hasError) {
+                writeJournal()
+            } else {
+                journalWriter = newJournalWriter()
+            }
         }
     }
 
+    private fun readJournalLine(line: String) {
+        val operation = line.substring(0, line.indexOf(" "))
+        val key = line.substring(line.indexOf( " ") + 1)
+
+        val entry = entries.getOrPut(key) { Entry(key) }
+
+        when(operation) {
+            CLEAN -> {
+                entry.readable = true
+                entry.editor = null
+            }
+            DIRTY -> {
+                entry.editor = Editor(entry)
+            }
+            READ -> {
+                entries[key]
+            }
+            REMOVE -> {
+                entries.remove(key)
+            }
+            else -> {
+                throw IOException()
+            }
+        }
+    }
+
+    private fun processJournal() {
+        var size = 0L
+        val iterator = entries.values.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (entry.editor == null) {
+                size += entry.cleanFile().length()
+            } else {
+                entry.editor = null
+                entry.cleanFile().delete()
+                entry.dirtyFile().delete()
+                iterator.remove()
+            }
+        }
+        this.size = size
+    }
+
+    @Synchronized
+    private fun writeJournal() {
+        journalWriter?.flush()
+        journalWriter?.close()
+
+        if (journalTmp.exists())  {
+            journalTmp.delete()
+        }
+        if (!journal.exists()) {
+            journal.createNewFile()
+        }
+        folder.mkdirs()
+        journalTmp.createNewFile()
+
+        FileOutputStream(journalTmp).bufferedWriter(StandardCharsets.UTF_8).apply {
+            append(appVersion.toString())
+            newLine()
+            append(JOURNAL_ENTRIES_START)
+            newLine()
+            entries.values.forEach { entry ->
+                if (entry.editor == null) {
+                    append(CLEAN)
+                    append(" ")
+                    append(entry.key)
+                    newLine()
+                } else {
+                    append(DIRTY)
+                    append(" ")
+                    append(entry.key)
+                    newLine()
+                }
+            }
+            flush()
+            close()
+        }
+
+        rename(journalTmp, journal)
+        operationsSinceRewrite = 0
+        journalWriter = newJournalWriter()
+    }
+
+    private fun newJournalWriter(): BufferedWriter {
+        return FileOutputStream(journal, true).bufferedWriter(StandardCharsets.UTF_8)
+    }
+
+    private fun journalRewriteRequired() = operationsSinceRewrite >= 2000
+
+    /**
+     * Cache methods
+     */
+
     fun edit(key: String): Editor? {
+        validateKey(key)
+        checkIfClosed()
+        initialize()
+
         var entry = entries[key]
 
         if (entry?.editor != null) {
             return null
         }
 
-        if (entry != null && entry.snapshotOpenedCount != 0) {
+        if (entry != null && entry.snapshotOpenedCount > 0) {
             return null
+        }
+
+        journalWriter!!.apply {
+            append(DIRTY)
+            append(" ")
+            append(key)
+            newLine()
+            flush()
         }
 
         if (entry == null) {
             entry = Entry(key)
             entries[key] = entry
         }
+
         val editor = Editor(entry)
         entry.editor = editor
         return editor
     }
 
     fun get(key: String): Snapshot? {
-        return entries[key]?.snapshot()
+        validateKey(key)
+        checkIfClosed()
+        initialize()
+
+        val snapshot = entries[key]?.snapshot() ?: return null
+
+        operationsSinceRewrite++
+        journalWriter!!.apply {
+            append(READ)
+            append(" ")
+            append(key)
+            newLine()
+            flush()
+        }
+
+        if (journalRewriteRequired()) {
+            launchCleanup()
+        }
+
+        return snapshot
+    }
+
+    @Synchronized
+    fun size(): Long {
+        initialize()
+        return size
+    }
+
+    fun delete() {
+        close()
+        folder.listFiles()?.forEach { it.delete() }
     }
 
     @Synchronized
@@ -67,40 +279,137 @@ class DiskCache(val folder: File, private val maxSize: Long) {
             removeEntry(entry)
         }
 
-        if (size > maxSize) {
+        operationsSinceRewrite++
+        journalWriter!!.apply {
+            if (success || entry.readable) { // if success or was prev success and this edit not
+                append(CLEAN)
+                append(" ")
+                append(entry.key)
+                newLine()
+                flush()
+            } else { // if not success or published remove
+                append(REMOVE)
+                append(" ")
+                append(entry.key)
+                newLine()
+                flush()
+            }
+        }
+
+        if (size > maxSize || journalRewriteRequired()) {
             launchCleanup()
         }
     }
 
     private fun removeEntry(entry: Entry) {
+        if (entry.snapshotOpenedCount > 0) {
+            journalWriter!!.apply {
+                append(DIRTY)
+                append(" ")
+                append(entry.key)
+                newLine()
+                flush()
+            }
+        }
+
         if (entry.editor != null || entry.snapshotOpenedCount > 0) {
             entry.zombie = true
             return
         }
 
-        entries.remove(entry.key)
         size -= entry.cleanFile().length()
 
         entry.cleanFile().delete()
         entry.dirtyFile().delete()
+
+        operationsSinceRewrite++
+        journalWriter!!.apply {
+            append(REMOVE)
+            append(" ")
+            append(entry.key)
+            newLine()
+            flush()
+        }
+
+        entries.remove(entry.key)
+
+        if (journalRewriteRequired()) {
+            launchCleanup()
+        }
     }
 
     private fun launchCleanup() {
         coroutineScope.launch {
             synchronized(this@DiskCache) {
+                if (!initialized || closed) return@launch
+
                 cleanupEntries()
+
+                if (journalRewriteRequired()) {
+                    writeJournal()
+                }
             }
         }
     }
 
     private fun cleanupEntries() {
-        for (entry in entries.values.toTypedArray()) {
-            removeEntry(entry)
-            if (size < maxSize * 0.8) {
-                break
-            }
+        while (size > maxSize * 0.8) {
+            if (!removeOldestEntry()) return
         }
     }
+
+    @Synchronized
+    fun evictAll() {
+        initialize()
+        for (entry in entries.values.toTypedArray()) {
+            removeEntry(entry)
+        }
+    }
+
+    private fun removeOldestEntry() : Boolean {
+        for (entry in entries.values) {
+            if (!entry.zombie) {
+                removeEntry(entry)
+                return true
+            }
+        }
+        return false
+    }
+
+    @Synchronized
+    override fun close() {
+        if (!initialized || closed) {
+            closed = true
+            return
+        }
+
+        for (entry in entries.values.toTypedArray()) {
+            if (entry.editor != null) {
+                entry.editor?.detach()
+            }
+        }
+
+        cleanupEntries()
+        coroutineScope.cancel()
+        journalWriter!!.flush()
+        journalWriter!!.close()
+        journalWriter = null
+        closed = true
+    }
+
+    private fun validateKey(key: String) {
+        require(KEY_PATTERN matches key) {
+            "keys must match regex [a-zA-Z0-9_-]{1,120}: \"$key\""
+        }
+    }
+
+    private fun checkIfClosed() {
+        check(!closed) { "cache is closed" }
+    }
+
+    /**
+     * Files utilities
+     */
 
     private fun rename(from: File, to: File) {
         if (to.exists()) {
@@ -110,6 +419,10 @@ class DiskCache(val folder: File, private val maxSize: Long) {
         from.renameTo(to)
     }
 
+    /**
+     * Classes
+     */
+
     inner class Entry(val key: String) {
         var snapshotOpenedCount = 0
         var zombie = false
@@ -118,9 +431,14 @@ class DiskCache(val folder: File, private val maxSize: Long) {
         var editor: Editor? = null
 
         fun snapshot() : Snapshot? {
-            if (!readable || zombie) {
+            if (!readable) return null
+            if (editor != null || zombie) return null
+
+            if (!cleanFile().exists()) {
+                removeEntry(this)
                 return null
             }
+
             snapshotOpenedCount++
             return Snapshot(this)
         }
@@ -182,7 +500,6 @@ class DiskCache(val folder: File, private val maxSize: Long) {
         fun close() {
             synchronized(this@DiskCache) {
                 entry.snapshotOpenedCount--
-
                 if (entry.zombie && entry.snapshotOpenedCount == 0) {
                     removeEntry(entry)
                 }
@@ -191,6 +508,14 @@ class DiskCache(val folder: File, private val maxSize: Long) {
     }
 
     companion object {
-        const val FILE_TMP = ".tmp"
+        private val KEY_PATTERN = "[a-zA-Z0-9_-]{1,120}".toRegex()
+        private const val FILE_TMP = ".tmp"
+        private const val JOURNAL = "journal"
+        private const val JOURNAL_TMP = "journal.tmp"
+        private const val CLEAN = "CLEAN"
+        private const val READ = "READ"
+        private const val DIRTY = "DIRTY"
+        private const val REMOVE = "REMOVE"
+        private const val JOURNAL_ENTRIES_START = "START"
     }
 }

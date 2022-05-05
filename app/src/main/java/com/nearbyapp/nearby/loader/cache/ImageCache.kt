@@ -24,15 +24,18 @@ class ImageCache(context: Context) {
     }
 
     operator fun get(s: String): Bitmap? {
-        return if (memoryImageCache.contains(s)) memoryImageCache[s] else diskLruImageCache[s]
+        return /*if (memoryImageCache.contains(s)) memoryImageCache[s] else*/ diskLruImageCache[s]
     }
 
     fun put(s: String, data: Bitmap, cachingStrategy: CachingStrategy?) {
         when (cachingStrategy) {
             CachingStrategy.ALL -> {
+                /*
                 if (!memoryImageCache.contains(s)) {
                     memoryImageCache.put(s, data)
                 }
+
+                 */
 
                 diskLruImageCache.put(s, data)
             }
@@ -52,7 +55,7 @@ class ImageCache(context: Context) {
     }
 
     fun contains(key: String): Boolean {
-        return memoryImageCache.contains(key) || diskLruImageCache.contains(key)
+        return /*memoryImageCache.contains(key) ||*/ diskLruImageCache.contains(key)
     }
 
     @Synchronized

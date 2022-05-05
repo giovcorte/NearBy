@@ -3,6 +3,7 @@ package com.nearbyapp.nearby.loader
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.widget.ImageView
 import com.nearbyapp.nearby.loader.cache.ImageCache
 import com.nearbyapp.nearby.loader.fetcher.Fetcher
@@ -101,9 +102,11 @@ class ImageLoader(val application: Application) {
         coroutineScope.launch {
             val cacheKey: String = tag ?: request.asString()
 
-            val result: ImageResult<Bitmap> = imageCache[cacheKey]?.let {
+            val result: ImageResult<Bitmap> = imageCache.get(cacheKey)?.let {
+                Log.d("DISKCACHE", "CACHE")
                 ImageResult.Success(it)
             } ?: run {
+                Log.d("DISKCACHE", "URL")
                 fetcher.fetch(request)
             }
             submit(target, result, cache, cacheKey)

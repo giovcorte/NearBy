@@ -11,9 +11,9 @@ class ImageDiskCache(private val diskCache: DiskCache) : IImageCache {
     override fun get(key: String): Bitmap? {
         val realKey = formatKey(key)
         var bitmap: Bitmap? = null
-        diskCache.get(realKey)?.let {
-            bitmap = BitmapFactory.decodeStream(FileInputStream(it.file()))
-            it.close()
+        diskCache.get(realKey)?.let { snapshot ->
+            bitmap = BitmapFactory.decodeStream(FileInputStream(snapshot.file()))
+            snapshot.close()
         }
         return bitmap
     }
@@ -23,9 +23,9 @@ class ImageDiskCache(private val diskCache: DiskCache) : IImageCache {
     }
 
     override fun put(key: String, bitmap: Bitmap) {
-        diskCache.edit(formatKey(key))?.let {
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, FileOutputStream(it.file()))
-            it.commit()
+        diskCache.edit(formatKey(key))?.let { editor ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, FileOutputStream(editor.file()))
+            editor.commit()
         }
     }
 

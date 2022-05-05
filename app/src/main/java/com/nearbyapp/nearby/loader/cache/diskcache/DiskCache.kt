@@ -1,33 +1,34 @@
 package com.nearbyapp.nearby.loader.cache.diskcache
 
+import android.util.Log
 import kotlinx.coroutines.*
 import java.io.*
 import java.nio.charset.StandardCharsets
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("unused")
 class DiskCache(
     val folder: File,
     private val maxSize: Long,
     private val appVersion: Int
-) : Closeable {
+) : Closeable, Flushable {
 
     private var initialized = false
     private var closed = false
 
     private val journal = File(folder.absolutePath + File.separator + JOURNAL)
     private val journalTmp = File(folder.absolutePath + File.separator + JOURNAL_TMP)
-
     private var operationsSinceRewrite = 0
     private var journalWriter: BufferedWriter? = null
+    private var hasJournalError = false
+
+    private var mostRecentTrimFailed = false
+    private var mostRecentRebuildFailed = false
 
     private var size = 0L
     private val entries = LinkedHashMap<String, Entry>(0, 0.75f, true)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val coroutineScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
-
-    init {
-        initialize()
-    }
 
     /**
      * Journal methods
@@ -81,7 +82,6 @@ class DiskCache(
                     currentLine = bufferedReader.readLine()
                     lineCount++
                 } catch (e: Exception) {
-                    e.printStackTrace()
                     hasError = true
                     break
                 }
@@ -98,8 +98,9 @@ class DiskCache(
     }
 
     private fun readJournalLine(line: String) {
-        val operation = line.substring(0, line.indexOf(" "))
-        val key = line.substring(line.indexOf( " ") + 1)
+        val parts = line.split(" ")
+        val operation = parts[0]
+        val key = parts[1]
 
         val entry = entries.getOrPut(key) { Entry(key) }
 
@@ -107,6 +108,7 @@ class DiskCache(
             CLEAN -> {
                 entry.readable = true
                 entry.editor = null
+                entry.setLength(parts[2])
             }
             DIRTY -> {
                 entry.editor = Editor(entry)
@@ -117,9 +119,7 @@ class DiskCache(
             REMOVE -> {
                 entries.remove(key)
             }
-            else -> {
-                throw IOException()
-            }
+            else -> throw IOException()
         }
     }
 
@@ -129,7 +129,7 @@ class DiskCache(
         while (iterator.hasNext()) {
             val entry = iterator.next()
             if (entry.editor == null) {
-                size += entry.cleanFile().length()
+                size += entry.length
             } else {
                 entry.editor = null
                 entry.cleanFile().delete()
@@ -164,6 +164,7 @@ class DiskCache(
                     append(CLEAN)
                     append(" ")
                     append(entry.key)
+                    entry.writeLength(this)
                     newLine()
                 } else {
                     append(DIRTY)
@@ -178,11 +179,15 @@ class DiskCache(
 
         rename(journalTmp, journal)
         operationsSinceRewrite = 0
+        hasJournalError = false
+        mostRecentRebuildFailed = false
         journalWriter = newJournalWriter()
     }
 
     private fun newJournalWriter(): BufferedWriter {
-        return FileOutputStream(journal, true).bufferedWriter(StandardCharsets.UTF_8)
+        return FaultHidingWriter(journal, true) {
+            hasJournalError = true
+        }
     }
 
     private fun journalRewriteRequired() = operationsSinceRewrite >= 2000
@@ -204,6 +209,16 @@ class DiskCache(
 
         if (entry != null && entry.snapshotOpenedCount > 0) {
             return null
+        }
+
+        if (mostRecentTrimFailed || mostRecentRebuildFailed) {
+            launchCleanup()
+            return null
+        }
+
+        if (hasJournalError) {
+            launchCleanup()
+            return null // Don't edit; the journal can't be written.
         }
 
         journalWriter!!.apply {
@@ -253,7 +268,7 @@ class DiskCache(
         return size
     }
 
-    fun delete() {
+    private fun delete() {
         close()
         folder.listFiles()?.forEach { it.delete() }
     }
@@ -265,10 +280,11 @@ class DiskCache(
         if (success && !entry.zombie) {
             entry.readable = true
 
-            val oldSize = entry.cleanFile().length()
+            val oldSize = entry.length
             val newSize = entry.dirtyFile().length()
             size = size - oldSize + newSize
 
+            entry.length = newSize
             rename(entry.dirtyFile(), entry.cleanFile())
         } else {
             entry.dirtyFile().delete()
@@ -285,6 +301,7 @@ class DiskCache(
                 append(CLEAN)
                 append(" ")
                 append(entry.key)
+                entry.writeLength(this)
                 newLine()
                 flush()
             } else { // if not success or published remove
@@ -299,6 +316,19 @@ class DiskCache(
         if (size > maxSize || journalRewriteRequired()) {
             launchCleanup()
         }
+
+        Log.d("DISKCACHE", "Edit entry endend, current size $size on $maxSize")
+    }
+
+    @Synchronized
+    fun remove(key: String) {
+        checkIfClosed()
+        validateKey(key)
+        initialize()
+        val entry = entries[key] ?: return
+
+        removeEntry(entry)
+        if (size <= maxSize) mostRecentTrimFailed = false
     }
 
     private fun removeEntry(entry: Entry) {
@@ -317,7 +347,7 @@ class DiskCache(
             return
         }
 
-        size -= entry.cleanFile().length()
+        size -= entry.length
 
         entry.cleanFile().delete()
         entry.dirtyFile().delete()
@@ -339,14 +369,28 @@ class DiskCache(
     }
 
     private fun launchCleanup() {
+        Log.d("DISKCACHE", "Cleanup started, current size $size over $maxSize")
         coroutineScope.launch {
             synchronized(this@DiskCache) {
                 if (!initialized || closed) return@launch
+                try {
+                    cleanupEntries()
+                } catch (_: Exception) {
+                    mostRecentTrimFailed = true
+                }
 
-                cleanupEntries()
+                Log.d("DISKCACHE", "Cleanup entry endend, current size $size on $maxSize")
+                if (mostRecentTrimFailed) Log.d("DISKCACHE", "Most recently trim failed")
 
-                if (journalRewriteRequired()) {
-                    writeJournal()
+                try {
+                    if (journalRewriteRequired() || hasJournalError) {
+                        writeJournal()
+                    }
+                    Log.d("DISKCACHE", "Cleanup write journal success")
+                } catch (_: IOException) {
+                    mostRecentRebuildFailed = true
+                    journalWriter = FakeWriter(journal)
+                    Log.d("DISKCACHE", "Cleanup write journal failed")
                 }
             }
         }
@@ -356,6 +400,7 @@ class DiskCache(
         while (size > maxSize * 0.8) {
             if (!removeOldestEntry()) return
         }
+        mostRecentTrimFailed = false
     }
 
     @Synchronized
@@ -364,6 +409,7 @@ class DiskCache(
         for (entry in entries.values.toTypedArray()) {
             removeEntry(entry)
         }
+        mostRecentTrimFailed = false
     }
 
     private fun removeOldestEntry() : Boolean {
@@ -395,6 +441,15 @@ class DiskCache(
         journalWriter!!.close()
         journalWriter = null
         closed = true
+    }
+
+    @Synchronized
+    override fun flush() {
+        if (!initialized) return
+
+        checkIfClosed()
+        cleanupEntries()
+        journalWriter!!.flush()
     }
 
     private fun validateKey(key: String) {
@@ -430,6 +485,8 @@ class DiskCache(
 
         var editor: Editor? = null
 
+        var length = 0L
+
         fun snapshot() : Snapshot? {
             if (!readable) return null
             if (editor != null || zombie) return null
@@ -441,6 +498,19 @@ class DiskCache(
 
             snapshotOpenedCount++
             return Snapshot(this)
+        }
+
+        fun setLength(length: String) {
+            try {
+                this.length = length.toLong()
+            } catch (_: NumberFormatException) {
+                throw IOException()
+            }
+        }
+
+        fun writeLength(writer: Writer) {
+            writer.append(" ")
+            writer.append(length.toString())
         }
 
         fun cleanFile(): File {

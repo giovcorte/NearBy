@@ -5,7 +5,6 @@ import kotlinx.coroutines.*
 import java.io.*
 import java.nio.charset.StandardCharsets
 
-@Suppress("unused")
 class DiskCache(
     val folder: File,
     private val maxSize: Long,

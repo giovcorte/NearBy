@@ -1,6 +1,7 @@
 package com.nearbyapp.nearby
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Typeface
 import android.view.View.GONE
 import android.view.View.VISIBLE
@@ -143,7 +144,10 @@ object BindingMethods {
                 ImageLoader.get().load(file!!).into(imageView).run()
             } else {
                 val drawable = CircularProgressDrawable(imageView.context)
-                drawable.setColorSchemeColors(R.color.colorPrimary, R.color.colorPrimaryDark, R.color.colorAccent)
+                drawable.setColorSchemeColors(
+                    color(imageView.context, R.color.colorPrimary),
+                    color(imageView.context, R.color.colorPrimaryDark),
+                    color(imageView.context, R.color.colorAccent))
                 drawable.centerRadius = 30f
                 drawable.strokeWidth = 5f
                 ImageLoader.get().load(photo.link).into(imageView, drawable).run()
@@ -226,7 +230,10 @@ object BindingMethods {
                 ImageLoader.get().load(s.toInt()).into(v).run()
             } else {
                 val drawable = CircularProgressDrawable(v.context)
-                drawable.setColorSchemeColors(R.color.colorPrimary, R.color.colorPrimaryDark, R.color.colorAccent)
+                drawable.setColorSchemeColors(
+                    color(v.context, R.color.colorPrimary),
+                    color(v.context, R.color.colorPrimaryDark),
+                    color(v.context, R.color.colorAccent))
                 drawable.centerRadius = 30f
                 drawable.strokeWidth = 5f
                 ImageLoader.get().load(s).into(v, drawable).run()
@@ -251,8 +258,15 @@ object BindingMethods {
     @BindingMethod
     fun bindNearbyPlace(@View view: ItemNearbyPlace?, @Data data: NearbyPlace?, @Inject navigation: NavigationManager, @Inject clipboard: Clipboard) {
         view?.image?.visibility = if (data?.thumbnail != null) VISIBLE else GONE
-        data?.thumbnail?.let {
-            ImageLoader.get().load(it).into(view?.image).tag(data.place_id).run()
+        safeLet(view, data?.thumbnail) { v, thumbnail ->
+            val drawable = CircularProgressDrawable(v.context)
+            drawable.setColorSchemeColors(
+                color(v.context, R.color.colorPrimary),
+                color(v.context, R.color.colorPrimaryDark),
+                color(v.context, R.color.colorAccent))
+            drawable.centerRadius = 30f
+            drawable.strokeWidth = 5f
+            ImageLoader.get().load(thumbnail).into(v.image, drawable).tag(data!!.place_id).run()
         }
         view?.setOnClickListener {
             clipboard.putData("name", data!!.name)
@@ -261,6 +275,11 @@ object BindingMethods {
             clipboard.putData("lng", data.userLng)
             navigation.navigateTo("detail")
         }
+    }
+
+    @JvmStatic
+    fun color(context: Context, id: Int) : Int {
+        return ContextCompat.getColor(context, id)
     }
 
     @JvmStatic

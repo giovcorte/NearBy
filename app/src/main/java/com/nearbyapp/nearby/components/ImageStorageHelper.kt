@@ -42,7 +42,7 @@ class ImageStorageHelper(private val folder: File, private val imageCache: Image
         return "$id-$index"
     }
 
-    private fun storeImages(baseName: String, images: List<String>): Boolean {
+    private suspend fun storeImages(baseName: String, images: List<String>): Boolean {
         images.withIndex().iterator().forEach { link ->
             val key = link.value
             val fileName = getImageId(baseName, link.index)

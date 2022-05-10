@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 
 interface Target {
 
-    fun onProcessing()
+    fun onProcessing(cached: Boolean)
 
     fun onSuccess(bitmap: Bitmap)
 

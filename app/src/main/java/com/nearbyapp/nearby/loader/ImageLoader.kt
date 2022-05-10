@@ -98,10 +98,12 @@ class ImageLoader(val application: Application) {
         cache: ImageCache.CachingStrategy,
         tag: String?
     ) {
-        target.onProcessing()
         coroutineScope.launch {
             val cacheKey: String = tag ?: request.asString()
-
+            val cached = imageCache.contains(cacheKey)
+            withContext(Dispatchers.Main) {
+                target.onProcessing(cached)
+            }
             val result: ImageResult<Bitmap> = imageCache.get(cacheKey)?.let {
                 Log.d("DISKCACHE", "CACHE")
                 ImageResult.Success(it)

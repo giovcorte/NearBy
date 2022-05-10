@@ -1,10 +1,9 @@
 package com.nearbyapp.nearby.loader.cache.memorycache
 
 import android.graphics.Bitmap
-import com.nearbyapp.nearby.loader.cache.IImageCache
 import java.util.*
 
-class ImageMemoryCache : IImageCache {
+class ImageMemoryCache {
 
     private val cache = Collections.synchronizedMap(
         LinkedHashMap<String?, Bitmap?>(10, 1.5f, true)
@@ -13,7 +12,8 @@ class ImageMemoryCache : IImageCache {
     private var size: Long = 0
     private val limit: Long = Runtime.getRuntime().maxMemory() / 8
 
-    override fun get(key: String): Bitmap? {
+    @Synchronized
+    operator fun get(key: String): Bitmap? {
         return try {
             if (!cache.containsKey(key)) {
                 null
@@ -23,12 +23,13 @@ class ImageMemoryCache : IImageCache {
         }
     }
 
-    override fun contains(key: String): Boolean {
+    @Synchronized
+    fun contains(key: String): Boolean {
         return cache.containsKey(key)
     }
 
     @Synchronized
-    override fun put(key: String, bitmap: Bitmap) {
+    fun put(key: String, bitmap: Bitmap) {
         if (cache.containsKey(key)) {
             size -= getSizeInBytes(cache[key])
         }
@@ -52,7 +53,7 @@ class ImageMemoryCache : IImageCache {
         }
     }
 
-    override fun clear() {
+    fun clear() {
         cache.clear()
         size = 0
     }

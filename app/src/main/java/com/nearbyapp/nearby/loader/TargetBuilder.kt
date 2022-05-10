@@ -10,7 +10,7 @@ class TargetBuilder {
 
     fun create(view: ImageView?): Target {
         return object : Target {
-            override fun onProcessing() {
+            override fun onProcessing(cached: Boolean) {
 
             }
 
@@ -27,9 +27,11 @@ class TargetBuilder {
 
     fun create(view: ImageView?, placeHolder: Drawable): Target {
         return object : Target {
-            override fun onProcessing() {
-                view?.setImageDrawable(placeHolder)
-                if (placeHolder is Animatable) placeHolder.start()
+            override fun onProcessing(cached: Boolean) {
+                if (!cached) {
+                    view?.setImageDrawable(placeHolder)
+                    if (placeHolder is Animatable) placeHolder.start()
+                }
             }
 
             override fun onSuccess(bitmap: Bitmap) {

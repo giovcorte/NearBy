@@ -14,7 +14,7 @@ class FragmentFactory {
                 "saved" -> return SavedPlacesFragment()
                 "savedDetail" -> return SavedDetailFragment()
             }
-            return Fragment()
+            throw IllegalStateException()
         }
     }
 }

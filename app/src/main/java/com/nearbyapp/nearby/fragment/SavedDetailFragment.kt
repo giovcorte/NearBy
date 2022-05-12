@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
+import com.nearbyapp.nearby.repository.DataSource
 import com.nearbyapp.nearby.viewmodel.SavedDetailViewModel
 
 class SavedDetailFragment: ListFragment() {
@@ -33,7 +34,7 @@ class SavedDetailFragment: ListFragment() {
             adapter.notifyItemRangeInserted(0, adapter.itemCount)
         }
         if (viewModel.details.value.isNullOrEmpty()) {
-            viewModel.loadDetails(id)
+            viewModel.loadDetails(id, DataSource.DATABASE)
         }
     }
 }

@@ -35,6 +35,9 @@ import com.nearbyapp.nearby.model.detail.OpeningHours
 import com.nearbyapp.nearby.model.detail.Review
 import com.nearbyapp.nearby.model.nearby.NearbyPlace
 import com.nearbyapp.nearby.model.nearby.Photo
+import com.nearbyapp.nearby.model.settings.CachePreference
+import com.nearbyapp.nearby.model.settings.RadiusPreference
+import com.nearbyapp.nearby.model.settings.TravelModePreference
 import com.nearbyapp.nearby.navigation.NavigationManager
 import com.nearbyapp.nearby.widget.*
 
@@ -58,6 +61,17 @@ object BindingMethods {
                 clipboard.putData("id", detail.place_id)
                 clipboard.putData("name", detail.place_name)
                 navigation.navigateTo("savedDetail")
+            }
+        }
+    }
+
+    @JvmStatic
+    @BindingMethod
+    fun bindItemSingleCheckbox(@View view: ItemSingleTextCheckbox?, @Data data: CachePreference?, @Inject preferencesManager: PreferencesManager?) {
+        safeLet(view, data) { checkbox, pref ->
+            checkbox.checkbox.isChecked = pref.selected
+            checkbox.checkbox.setOnCheckedChangeListener { _, b ->
+                preferencesManager?.putCacheEnabled(b)
             }
         }
     }

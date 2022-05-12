@@ -1,10 +1,10 @@
 package com.nearbyapp.nearby.model.detail
 
 import androidx.room.ColumnInfo
-import androidx.room.Ignore
 import com.databinding.annotations.BindableObject
 import com.databinding.databinding.IData
 import com.google.gson.annotations.SerializedName
+import com.nearbyapp.nearby.recycler.Identifiable
 import com.nearbyapp.nearby.widget.ItemCalendar
 
 
@@ -13,7 +13,7 @@ data class OpeningHours (
 
     @SerializedName("open_now") @ColumnInfo var open_now : Boolean,
     @SerializedName("weekday_text")  @ColumnInfo var weekday_text : List<String>?
-) : IData {
+) : IData, Identifiable {
     override fun name(): String {
         return "OpeningHours"
     }
@@ -31,5 +31,9 @@ data class OpeningHours (
             }
             return "Nessuna informazione sugli orari"
         }
+
+    override fun id(): String {
+        return "calendar"
+    }
 
 }

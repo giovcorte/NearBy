@@ -11,6 +11,7 @@ import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.R
 import com.nearbyapp.nearby.components.ImageStorageHelper
 import com.nearbyapp.nearby.components.Status
+import com.nearbyapp.nearby.repository.DataSource
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.DetailViewModel
 
@@ -22,6 +23,8 @@ class DetailFragment: ListFragment() {
 
     private lateinit var activityViewModel: ActivityViewModel
     private lateinit var viewModel: DetailViewModel
+
+    private var dataSource: DataSource = DataSource.SERVICE
 
     private val menuListener = object : BaseActivity.MenuListener {
         override fun onItemSelected(item: MenuItem): Boolean {
@@ -54,16 +57,21 @@ class DetailFragment: ListFragment() {
 
     override fun doOnViewCreated(view: View, savedInstanceState: Bundle?) {
         activityViewModel.errorState.observe(viewLifecycleOwner) { status ->
-            when (status) {
-                Status.READY -> {
-                    clean()
+            when {
+                status == Status.READY || dataSource == DataSource.CACHE -> {
                     if (viewModel.details.value.isNullOrEmpty() && !loading) {
-                        loading = true
-                        viewModel.loadDetails(id)
+                        loadPlaceDetails()
                     }
                 }
+                status != Status.READY && preferencesManager.getCacheEnabled().selected -> {
+                    dataSource = DataSource.CACHE
+                    loadPlaceDetails()
+                }
                 else -> {
-                    error(status)
+                    showErrorView(status, true) {
+                        dataSource = DataSource.CACHE
+                        loadPlaceDetails()
+                    }
                 }
             }
         }
@@ -73,28 +81,35 @@ class DetailFragment: ListFragment() {
         viewModel.imagesState.observe(viewLifecycleOwner) { imageStatus ->
             when(imageStatus) {
                 ImageStorageHelper.Status.COMPLETED -> {
-                    loading(false)
+                    showLoading(false)
                     viewModel.saveDetails()
                     Toast.makeText(context, "Luogo salvato", Toast.LENGTH_SHORT).show()
                 }
                 ImageStorageHelper.Status.WRITING -> {
-                    loading(true)
+                    showLoading(true)
                 }
                 ImageStorageHelper.Status.ERROR -> {
-                    loading(false)
+                    showLoading(false)
                     dialog("Errore", "Impossibile scaricare le immagini")
                 }
-                else -> { loading(false) }
+                else -> { showLoading(false) }
             }
         }
         viewModel.details.observe(viewLifecycleOwner) { details ->
-            adapter.addItems(details)
-            adapter.notifyItemRangeInserted(0, adapter.itemCount)
+            adapter.update(details)
             loading = false
         }
         viewModel.loading.observe(viewLifecycleOwner) { loading ->
-            loading(loading)
+            if (activityViewModel.errorState.value == Status.READY || dataSource == DataSource.CACHE) {
+                showLoading(loading)
+            }
         }
+    }
+
+    private fun loadPlaceDetails() {
+        cleanErrorView()
+        loading = true
+        viewModel.loadDetails(id, dataSource)
     }
 
     override fun onDestroyView() {

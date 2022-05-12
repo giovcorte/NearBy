@@ -3,6 +3,7 @@ package com.nearbyapp.nearby.fragment
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -59,7 +60,7 @@ abstract class ListFragment: BaseFragment() {
 
     abstract fun doOnViewCreated(view: View, savedInstanceState: Bundle?)
 
-    fun loading(loading: Boolean) {
+    fun showLoading(loading: Boolean) {
         if (loading) {
             show(progressView)
         } else {
@@ -67,7 +68,7 @@ abstract class ListFragment: BaseFragment() {
         }
     }
 
-    fun error(error: Status) {
+    fun showErrorView(error: Status, action: Boolean=false, callback: () -> Unit = ::defaultCallback) {
         when(error) {
             Status.INTERNET,
             Status.SERVICE,
@@ -77,6 +78,14 @@ abstract class ListFragment: BaseFragment() {
                 hide(recyclerView)
                 show(errorView)
                 dataBinding.bind(errorView, error)
+
+                if (action) {
+                    errorView.button.visibility = VISIBLE
+                    errorView.button.text = "Ultima ricerca effettuata"
+                    errorView.button.setOnClickListener {
+                        callback()
+                    }
+                }
             }
             else -> {
                 hide(errorView)
@@ -85,11 +94,15 @@ abstract class ListFragment: BaseFragment() {
         }
     }
 
+    private fun defaultCallback() {
+
+    }
+
     fun getRecyclerView(): RecyclerView {
         return recyclerView
     }
 
-    fun clean() {
+    fun cleanErrorView() {
         hide(errorView)
         show(recyclerView)
     }

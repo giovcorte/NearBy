@@ -11,6 +11,7 @@ import com.nearbyapp.nearby.model.ListWrapper
 import com.nearbyapp.nearby.model.MapWrapper
 import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.model.nearby.Photo
+import com.nearbyapp.nearby.repository.DataSource
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -18,7 +19,7 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
 
     val details: MutableLiveData<MutableList<IData>> = MutableLiveData()
 
-    abstract fun loadDetails(id: String)
+    abstract fun loadDetails(id: String, dataSource: DataSource)
 
     fun getPolyline(response: ResponseWrapper<JSONObject?>): PolylineOptions? {
         return when(response) {

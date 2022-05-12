@@ -1,4 +1,4 @@
-package com.nearbyapp.nearby.model
+package com.nearbyapp.nearby.model.settings
 
 import com.databinding.annotations.BindableObject
 import com.databinding.databinding.IData

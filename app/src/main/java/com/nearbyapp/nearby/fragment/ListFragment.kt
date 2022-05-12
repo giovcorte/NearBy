@@ -1,5 +1,6 @@
 package com.nearbyapp.nearby.fragment
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -60,7 +61,7 @@ abstract class ListFragment: BaseFragment() {
 
     abstract fun doOnViewCreated(view: View, savedInstanceState: Bundle?)
 
-    fun showLoading(loading: Boolean) {
+    fun showLoadingView(loading: Boolean) {
         if (loading) {
             show(progressView)
         } else {
@@ -68,7 +69,8 @@ abstract class ListFragment: BaseFragment() {
         }
     }
 
-    fun showErrorView(error: Status, action: Boolean=false, callback: () -> Unit = ::defaultCallback) {
+    @SuppressLint("SetTextI18n")
+    fun showErrorView(error: Status, action: Boolean=false, callback: () -> Unit=::defaultCallback) {
         when(error) {
             Status.INTERNET,
             Status.SERVICE,
@@ -78,7 +80,6 @@ abstract class ListFragment: BaseFragment() {
                 hide(recyclerView)
                 show(errorView)
                 dataBinding.bind(errorView, error)
-
                 if (action) {
                     errorView.button.visibility = VISIBLE
                     errorView.button.text = "Ultima ricerca effettuata"

@@ -64,7 +64,7 @@ class NearByFragment: LocalizationFragmentV2() {
                 }
                 else -> {
                     loading = false
-                    showLoading(false)
+                    showLoadingView(false)
                     showErrorView(status, true) {
                         dataSource = DataSource.CACHE
                         loadPlaces()
@@ -74,7 +74,7 @@ class NearByFragment: LocalizationFragmentV2() {
         }
         viewModel.loading.observe(viewLifecycleOwner) { loading ->
             if (activityViewModel.errorState.value == Status.READY || dataSource == DataSource.CACHE) {
-                showLoading(loading)
+                showLoadingView(loading)
             }
         }
         viewModel.places.observe(viewLifecycleOwner) { places ->
@@ -89,7 +89,7 @@ class NearByFragment: LocalizationFragmentV2() {
     private fun loadPlaces() {
         cleanErrorView()
         loading = true
-        showLoading(true)
+        showLoadingView(true)
         when (dataSource) {
             DataSource.CACHE -> {
                 viewModel.loadPlaces(viewModel.userLatitude, viewModel.userLongitude, query!!, DataSource.CACHE)

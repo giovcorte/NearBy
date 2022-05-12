@@ -81,18 +81,18 @@ class DetailFragment: ListFragment() {
         viewModel.imagesState.observe(viewLifecycleOwner) { imageStatus ->
             when(imageStatus) {
                 ImageStorageHelper.Status.COMPLETED -> {
-                    showLoading(false)
+                    showLoadingView(false)
                     viewModel.saveDetails()
                     Toast.makeText(context, "Luogo salvato", Toast.LENGTH_SHORT).show()
                 }
                 ImageStorageHelper.Status.WRITING -> {
-                    showLoading(true)
+                    showLoadingView(true)
                 }
                 ImageStorageHelper.Status.ERROR -> {
-                    showLoading(false)
+                    showLoadingView(false)
                     dialog("Errore", "Impossibile scaricare le immagini")
                 }
-                else -> { showLoading(false) }
+                else -> { showLoadingView(false) }
             }
         }
         viewModel.details.observe(viewLifecycleOwner) { details ->
@@ -101,7 +101,7 @@ class DetailFragment: ListFragment() {
         }
         viewModel.loading.observe(viewLifecycleOwner) { loading ->
             if (activityViewModel.errorState.value == Status.READY || dataSource == DataSource.CACHE) {
-                showLoading(loading)
+                showLoadingView(loading)
             }
         }
     }

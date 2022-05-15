@@ -8,7 +8,6 @@ import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.nearbyapp.nearby.components.Status
-import com.nearbyapp.nearby.model.ProgressWrapper
 import com.nearbyapp.nearby.repository.DataSource
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.NearByViewModel
@@ -39,8 +38,7 @@ class NearByFragment: LocalizationFragmentV2() {
                     if (totalItemCount <= (lastVisibleItem + visibleThreshold)) {
                         if (!loading && viewModel.token != null) {
                             loading = true
-                            adapter.addItem(ProgressWrapper())
-                            adapter.notifyItemInserted(adapter.itemCount - 1)
+                            adapter.addLoader()
                             viewModel.loadMorePlaces(dataSource)
                         }
                     }
@@ -54,7 +52,7 @@ class NearByFragment: LocalizationFragmentV2() {
         activityViewModel.errorState.observe(viewLifecycleOwner) { status ->
             when {
                 status == Status.READY || dataSource == DataSource.CACHE -> {
-                    if (viewModel.places.value.isNullOrEmpty() && !loading) {
+                    if (viewModel.placesData.value.isNullOrEmpty() && !loading) {
                         loadPlaces()
                     }
                 }
@@ -77,10 +75,8 @@ class NearByFragment: LocalizationFragmentV2() {
                 showLoadingView(loading)
             }
         }
-        viewModel.places.observe(viewLifecycleOwner) { places ->
-            if ( adapter.itemCount > 0 && adapter.getItem(adapter.itemCount - 1) is ProgressWrapper) {
-                adapter.removeItem(adapter.itemCount - 1)
-            }
+        viewModel.placesData.observe(viewLifecycleOwner) { places ->
+            adapter.removeLoader()
             adapter.update(places)
             loading = false
         }

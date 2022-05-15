@@ -3,11 +3,11 @@ package com.nearbyapp.nearby.viewmodel
 import android.app.Application
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.databinding.databinding.IData
 import com.google.android.gms.maps.model.PolylineOptions
 import com.nearbyapp.nearby.components.ResponseWrapper
 import com.nearbyapp.nearby.model.TextWrapper
 import com.nearbyapp.nearby.model.detail.Detail
+import com.nearbyapp.nearby.recycler.Identifiable
 import com.nearbyapp.nearby.repository.DataSource
 import com.nearbyapp.nearby.viewmodel.livedata.ImagesLiveData
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +40,7 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
                     }
                     val fav = repository.existPlace(id)
                     withContext(Dispatchers.Main) {
-                        val details: MutableList<IData?> = mutableListOf()
+                        val details: MutableList<Identifiable?> = mutableListOf()
                         response.value?.detail?.let {
                             details.add(getImages(it.photos))
                             details.add(it)

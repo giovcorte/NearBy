@@ -4,10 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.databinding.databinding.IData
 import com.databinding.databinding.IViewAction
 import com.nearbyapp.nearby.model.Constants
 import com.nearbyapp.nearby.model.HomeCategory
+import com.nearbyapp.nearby.recycler.Identifiable
 
 class HomeFragment: ListFragment() {
 
@@ -23,7 +23,7 @@ class HomeFragment: ListFragment() {
         adapter.addItems(getHomeList())
     }
 
-    private fun getHomeList(): MutableList<IData> {
+    private fun getHomeList(): MutableList<Identifiable> {
         return Constants.TITLES.mapIndexed { i, o ->
             HomeCategory(o, Constants.ICONS[i], object : IViewAction {
                 override fun onClick() {

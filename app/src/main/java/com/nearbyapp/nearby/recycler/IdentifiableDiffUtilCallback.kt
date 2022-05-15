@@ -3,8 +3,8 @@ package com.nearbyapp.nearby.recycler
 import androidx.recyclerview.widget.DiffUtil
 
 class IdentifiableDiffUtilCallback(
-    private val oldList: MutableList<Identifiable>,
-    private val newList: MutableList<Identifiable>
+    private val oldList: List<Identifiable>,
+    private val newList: List<Identifiable>
 ) : DiffUtil.Callback() {
 
 

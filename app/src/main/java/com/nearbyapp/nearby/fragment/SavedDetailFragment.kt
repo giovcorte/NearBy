@@ -30,8 +30,7 @@ class SavedDetailFragment: ListFragment() {
 
     override fun doOnViewCreated(view: View, savedInstanceState: Bundle?) {
         viewModel.details.observe(viewLifecycleOwner) {
-            adapter.addItems(it)
-            adapter.notifyItemRangeInserted(0, adapter.itemCount)
+            adapter.update(it)
         }
         if (viewModel.details.value.isNullOrEmpty()) {
             viewModel.loadDetails(id, DataSource.DATABASE)

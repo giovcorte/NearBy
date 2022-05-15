@@ -2,9 +2,9 @@ package com.nearbyapp.nearby.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.viewModelScope
-import com.databinding.databinding.IData
 import com.nearbyapp.nearby.components.ResponseWrapper
 import com.nearbyapp.nearby.model.TextWrapper
+import com.nearbyapp.nearby.recycler.Identifiable
 import com.nearbyapp.nearby.repository.DataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,7 +18,7 @@ class SavedDetailViewModel(application: Application): AbstractDetailViewModel(ap
                 is ResponseWrapper.Success -> {
                     withContext(Dispatchers.Main) {
                         response.value?.detail?.let {
-                            val detailsList: MutableList<IData?> = mutableListOf()
+                            val detailsList: MutableList<Identifiable?> = mutableListOf()
                             detailsList.add(getImages(it.photos?.filter { photo ->
                                 photo.id != null
                             }))

@@ -3,9 +3,9 @@ package com.nearbyapp.nearby.viewmodel
 import android.app.Application
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.databinding.databinding.IData
 import com.nearbyapp.nearby.components.ResponseWrapper
 import com.nearbyapp.nearby.model.TextWrapper
+import com.nearbyapp.nearby.recycler.Identifiable
 import com.nearbyapp.nearby.repository.DataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -14,7 +14,8 @@ import kotlinx.coroutines.withContext
 
 class NearByViewModel(application: Application): BaseViewModel(application) {
 
-    val places: MutableLiveData<MutableList<IData>> = MutableLiveData()
+    private val places: MutableList<Identifiable> = mutableListOf()
+    val placesData: MutableLiveData<MutableList<Identifiable>> = MutableLiveData()
     var position: Int = 0
     var token: String? = null
 
@@ -36,14 +37,15 @@ class NearByViewModel(application: Application): BaseViewModel(application) {
                 is ResponseWrapper.Success -> {
                     withContext(Dispatchers.Main) {
                         token = response.value?.next_page_token
-                        places.postValue(response.value?.results?.map{
+                        places.addAll(response.value?.results?.map{
                             it.apply {
                                 userLat = latitude
                                 userLng = longitude
                             }
-                        }?.toMutableList() ?: run {
-                            mutableListOf(TextWrapper("Nessun luogo trovato"))
+                        } ?: run {
+                            listOf(TextWrapper("Nessun luogo trovato"))
                         })
+                        placesData.postValue(places)
                         loading.postValue(false)
                     }
                 }
@@ -59,21 +61,16 @@ class NearByViewModel(application: Application): BaseViewModel(application) {
                     is ResponseWrapper.Success -> {
                         withContext(Dispatchers.Main) {
                             token = response.value?.next_page_token
-                            val currentPlaces = places.value
                             val newPlaces = response.value?.results?.map{
                                 it.userLat = userLatitude
                                 it.userLng = userLongitude
                                 it
                             }?.toMutableList()
                             newPlaces?.let {
-                                currentPlaces?.addAll(it)
-                                currentPlaces?.let {
-                                    places.postValue(currentPlaces.toMutableList())
-                                }
+                                places.addAll(it)
+                                placesData.postValue(places)
                             } ?: run {
-                                currentPlaces?.let {
-                                    places.postValue(currentPlaces.toMutableList())
-                                }
+                                placesData.postValue(places)
                             }
                             loading.postValue(false)
                         }

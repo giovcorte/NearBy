@@ -1,6 +1,8 @@
 package com.nearbyapp.nearby.recycler
 
-interface Identifiable {
+import com.databinding.databinding.IData
+
+interface Identifiable : IData {
 
     fun id(): String
     

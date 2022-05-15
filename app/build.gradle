@@ -56,11 +56,11 @@ dependencies {
     implementation 'com.github.giovcorte:DiskCache:1.2'
 
     // view binding library
-    implementation 'com.github.giovcorte.DataBinding:annotations:1.1.1'
-    implementation 'com.github.giovcorte.DataBinding:databinding:1.1.1'
-    implementation 'com.github.giovcorte.DataBinding:compiler:1.1.1'
+    implementation 'com.github.giovcorte.DataBinding:annotations:1.2.1'
+    implementation 'com.github.giovcorte.DataBinding:databinding:1.2.1'
+    implementation 'com.github.giovcorte.DataBinding:compiler:1.2.1'
 
-    kapt 'com.github.giovcorte.DataBinding:compiler:1.1.1'
+    kapt 'com.github.giovcorte.DataBinding:compiler:1.2.1'
 
     // maps
     implementation 'com.google.android.gms:play-services-location:19.0.1'

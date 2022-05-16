@@ -31,13 +31,4 @@ class GenericUpdatableRecyclerViewAdapter(
         notifyItemInserted(itemCount - 1)
     }
 
-    @Synchronized
-    fun removeLoader() {
-        getItems().forEachIndexed { index, identifiable ->
-            if (identifiable is ProgressWrapper) {
-                getItems().removeAt(index)
-                notifyItemRemoved(index)
-            }
-        }
-    }
 }

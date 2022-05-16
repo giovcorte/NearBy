@@ -10,4 +10,6 @@ interface Target {
 
     fun onError()
 
+    fun getId() : Int
+
 }

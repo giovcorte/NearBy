@@ -19,6 +19,10 @@ import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 
 class BaseActivity : AppCompatActivity() {
 
+    companion object {
+        const val TOOLBAR_TITLE = "toolbar-title"
+    }
+
     private lateinit var fragmentManagerHelper: FragmentManagerHelper
     lateinit var navigationManager: NavigationManager
     lateinit var clipboard: Clipboard
@@ -60,10 +64,26 @@ class BaseActivity : AppCompatActivity() {
         }
         setSupportActionBar(toolbar)
         navigationManager.initNavigation("home")
+
+        savedInstanceState?.getString(TOOLBAR_TITLE)?.let {
+            supportActionBar?.title = it
+        }
     }
 
     override fun onBackPressed() {
         navigationManager.backToPrevious()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(TOOLBAR_TITLE, toolbar.title.toString())
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        savedInstanceState.getString(TOOLBAR_TITLE)?.let {
+            supportActionBar?.title = it
+        }
     }
 
     private fun selectDrawerItem(menuItem: MenuItem?) {

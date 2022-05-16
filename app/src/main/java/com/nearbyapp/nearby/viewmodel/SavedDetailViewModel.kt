@@ -25,7 +25,7 @@ class SavedDetailViewModel(application: Application): AbstractDetailViewModel(ap
                             detailsList.add(it)
                             detailsList.add(getReviews(it))
                             detailsList.add(it.opening_hours)
-                            details.postValue(detailsList.filterNotNull().toMutableList())
+                            details.postValue(detailsList.filterNotNull())
                         }
                     }
                 }

@@ -76,7 +76,6 @@ class NearByFragment: LocalizationFragmentV2() {
             }
         }
         viewModel.placesData.observe(viewLifecycleOwner) { places ->
-            adapter.removeLoader()
             adapter.update(places)
             loading = false
         }

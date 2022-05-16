@@ -53,7 +53,7 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
                             details.add(TextWrapper("Nessun dettaglio disponibile"))
                         }
                         this@DetailViewModel.favorite.postValue(fav)
-                        this@DetailViewModel.details.postValue(details.filterNotNull().toMutableList())
+                        this@DetailViewModel.details.postValue(details.filterNotNull())
                         this@DetailViewModel.loading.postValue(false)
                     }
                 }

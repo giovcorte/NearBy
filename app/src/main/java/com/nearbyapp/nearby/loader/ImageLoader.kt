@@ -13,9 +13,10 @@ import com.nearbyapp.nearby.loader.fetcher.URLFetcher
 import kotlinx.coroutines.*
 import java.io.File
 
-class ImageLoader(val application: Application) {
-
-    private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+class ImageLoader(
+    val application: Application,
+    private val coroutineScope: CoroutineScope = CoroutineScope(Job() + Dispatchers.IO)
+) {
 
     companion object {
         lateinit var INSTANCE: ImageLoader
@@ -34,6 +35,8 @@ class ImageLoader(val application: Application) {
     private val requestBuilder: RequestBuilder = RequestBuilder(application)
     private val targetBuilder: TargetBuilder = TargetBuilder()
 
+    private val viewsSourcesMap = LinkedHashMap<Int, String>()
+
     init {
         INSTANCE = this
     }
@@ -47,10 +50,10 @@ class ImageLoader(val application: Application) {
 
         fun into(target: Target) = apply { this.target = target }
 
-        fun into(view: ImageView?) = apply { this.target = loader.targetBuilder.create(view)}
+        fun into(view: ImageView?) = apply { this.target = loader.targetBuilder.create(view, request!!.asString())}
 
         fun into(view: ImageView?, placeHolder: Drawable) = apply {
-            this.target = loader.targetBuilder.create(view, placeHolder)
+            this.target = loader.targetBuilder.create(view, request!!.asString(), placeHolder)
         }
 
         fun load(url: String) = apply {
@@ -99,6 +102,9 @@ class ImageLoader(val application: Application) {
         tag: String?
     ) {
         coroutineScope.launch {
+            synchronized(viewsSourcesMap) {
+                viewsSourcesMap[target.getId()] = request.asString()
+            }
             val cacheKey: String = tag ?: request.asString()
             val cached = imageCache.contains(cacheKey)
             withContext(Dispatchers.Main) {
@@ -111,11 +117,10 @@ class ImageLoader(val application: Application) {
                 Log.d("DISKCACHE", "URL")
                 fetcher.fetch(request)
             }
-            submit(target, result, cache, cacheKey)
+            submit(request, target, result, cache, cacheKey)
         }
     }
 
-    @Synchronized
     fun abort() {
         coroutineScope.coroutineContext.cancelChildren()
     }
@@ -129,6 +134,7 @@ class ImageLoader(val application: Application) {
     }
 
     private suspend fun submit(
+        request: Request,
         target: Target,
         result: ImageResult<Bitmap>,
         cache: ImageCache.CachingStrategy,
@@ -137,8 +143,12 @@ class ImageLoader(val application: Application) {
         when (result) {
             is ImageResult.Success -> {
                 imageCache.put(cacheKey, result.value, cache)
-                withContext(Dispatchers.Main) {
-                    target.onSuccess(result.value)
+                synchronized(viewsSourcesMap) {
+                    if (viewsSourcesMap[target.getId()] == request.asString()) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            target.onSuccess(result.value)
+                        }
+                    }
                 }
             }
             is ImageResult.Error -> {

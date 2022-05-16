@@ -33,13 +33,16 @@ class NavigationManager(var activity: BaseActivity, var fragmentManager: IFragme
     }
 
     fun updateToolbar(title: String?) {
-        activity.getToolbar().title = title
-        if (!fragmentManager.isCurrentFragmentFirst()) {
-            activity.getToolbar().setNavigationIcon(R.drawable.arrow_back)
-            activity.getToolbar().setNavigationOnClickListener { backToPrevious() }
-        } else {
-            activity.getToolbar().setNavigationIcon(R.drawable.menu)
-            activity.getToolbar().setNavigationOnClickListener { activity.getDrawer().openDrawer(GravityCompat.START) }
+        activity.supportActionBar?.title = title
+        when {
+            !fragmentManager.isCurrentFragmentFirst() -> {
+                activity.getToolbar().setNavigationIcon(R.drawable.arrow_back)
+                activity.getToolbar().setNavigationOnClickListener { backToPrevious() }
+            }
+            else -> {
+                activity.getToolbar().setNavigationIcon(R.drawable.menu)
+                activity.getToolbar().setNavigationOnClickListener { activity.getDrawer().openDrawer(GravityCompat.START) }
+            }
         }
     }
 

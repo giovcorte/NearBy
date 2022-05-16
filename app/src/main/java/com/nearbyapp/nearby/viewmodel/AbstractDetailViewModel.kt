@@ -17,7 +17,7 @@ import org.json.JSONObject
 
 abstract class AbstractDetailViewModel(application: Application): BaseViewModel(application) {
 
-    val details: MutableLiveData<MutableList<Identifiable>> = MutableLiveData()
+    val details: MutableLiveData<List<Identifiable>> = MutableLiveData()
 
     abstract fun loadDetails(id: String, dataSource: DataSource)
 

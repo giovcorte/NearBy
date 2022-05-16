@@ -5,10 +5,10 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.databinding.annotations.BindableObject
-import com.databinding.databinding.IData
 import com.google.gson.annotations.SerializedName
 import com.nearbyapp.nearby.model.nearby.Geometry
 import com.nearbyapp.nearby.model.nearby.Photo
+import com.nearbyapp.nearby.recycler.Identifiable
 import com.nearbyapp.nearby.widget.ItemDetail
 
 @Entity
@@ -23,8 +23,9 @@ data class Detail (
     @SerializedName("place_id") @PrimaryKey var place_id : String,
     @SerializedName("price_level") @ColumnInfo(name = "price") var price_level : Int,
     @SerializedName("rating") @ColumnInfo var rating : Double?,
-    @SerializedName("reviews") @ColumnInfo var reviews : List<Review>?
-) : IData {
+    @SerializedName("reviews") @ColumnInfo var reviews : List<Review>?,
+    @SerializedName("website") @ColumnInfo var website : String = ""
+) : Identifiable {
 
     override fun name(): String {
         return "Detail"
@@ -63,5 +64,9 @@ data class Detail (
                 "No price"
             }
         }
+
+    override fun id(): String {
+        return place_id
+    }
 
 }

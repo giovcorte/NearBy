@@ -3,7 +3,9 @@ package com.nearbyapp.nearby.loader
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.widget.ImageView
+import com.nearbyapp.nearby.loader.cache.IImageCache
 import com.nearbyapp.nearby.loader.cache.ImageCache
 import com.nearbyapp.nearby.loader.fetcher.Fetcher
 import com.nearbyapp.nearby.loader.fetcher.FileFetcher
@@ -12,9 +14,10 @@ import com.nearbyapp.nearby.loader.fetcher.URLFetcher
 import kotlinx.coroutines.*
 import java.io.File
 
-class ImageLoader(val application: Application) {
-
+class ImageLoader(
+    val application: Application,
     private val coroutineScope: CoroutineScope = CoroutineScope(Job() + Dispatchers.IO)
+) {
 
     companion object {
         lateinit var INSTANCE: ImageLoader
@@ -24,7 +27,7 @@ class ImageLoader(val application: Application) {
         }
     }
 
-    private val imageCache: ImageCache = ImageCache(application)
+    private val imageCache: IImageCache = ImageCache(application)
 
     private val urlFetcher: URLFetcher = URLFetcher()
     private val fileFetcher: FileFetcher = FileFetcher()
@@ -32,6 +35,8 @@ class ImageLoader(val application: Application) {
 
     private val requestBuilder: RequestBuilder = RequestBuilder(application)
     private val targetBuilder: TargetBuilder = TargetBuilder()
+
+    private val viewsSourcesMap = LinkedHashMap<Int, String>()
 
     init {
         INSTANCE = this
@@ -41,7 +46,6 @@ class ImageLoader(val application: Application) {
         private var request: Request? = null
         private var target: Target? = null
         private var fetcher: Fetcher? = null
-        private var cache: ImageCache.CachingStrategy = ImageCache.CachingStrategy.ALL
 
         fun into(target: Target) = apply { this.target = target }
 
@@ -67,12 +71,16 @@ class ImageLoader(val application: Application) {
         }
 
         fun cache(cache: ImageCache.CachingStrategy) = apply {
-            this.cache = cache
+            (request as RequestWrapper).setCache(cache)
+        }
+
+        fun tag(tag: String) = apply {
+            (request as RequestWrapper).setTag(tag)
         }
 
         fun run() {
             safe(request, target, fetcher) { request, target, fetcher ->
-                loader.load(request, target, fetcher, cache)
+                loader.load(request, target, fetcher)
             }
         }
 
@@ -86,29 +94,35 @@ class ImageLoader(val application: Application) {
         request: Request,
         target: Target,
         fetcher: Fetcher,
-        cache: ImageCache.CachingStrategy
     ) {
-        target.onProcessing()
         coroutineScope.launch {
-            val result: ImageResult<Bitmap> = imageCache[request.source()]?.let {
-                ImageResult.Success(it)
+            synchronized(viewsSourcesMap) {
+                viewsSourcesMap[target.getId()] = request.asString()
+            }
+            val cached = imageCache.contains(request)
+            withContext(Dispatchers.Main) {
+                target.onProcessing(cached)
+            }
+            val result: ImageResult<Bitmap> = imageCache.get(request)?.let {
+                Log.d("DISKCACHE", "CACHE")
+                ImageResult.Success(it, cached)
             } ?: run {
+                Log.d("DISKCACHE", "URL")
                 fetcher.fetch(request)
             }
-            submit(request, target, result, cache)
+            submit(request, target, result)
         }
     }
 
-    @Synchronized
     fun abort() {
         coroutineScope.coroutineContext.cancelChildren()
     }
 
-    fun clear() {
+    suspend fun clear() {
         imageCache.clear()
     }
 
-    fun cache(): ImageCache {
+    fun cache(): IImageCache {
         return imageCache
     }
 
@@ -116,21 +130,36 @@ class ImageLoader(val application: Application) {
         request: Request,
         target: Target,
         result: ImageResult<Bitmap>,
-        cache: ImageCache.CachingStrategy
     ) {
         when (result) {
             is ImageResult.Success -> {
-                imageCache.put(request.source(), result.value, cache)
-                withContext(Dispatchers.Main) {
-                    target.onSuccess(result.value)
+                if (!result.fromCache) {
+                    imageCache.put(request, result.value)
+                }
+                synchronized(viewsSourcesMap) {
+                    if (targetMatchesRequest(target, request)) {
+                        viewsSourcesMap.remove(target.getId())
+                        CoroutineScope(Dispatchers.Main).launch {
+                            target.onSuccess(result.value)
+                        }
+                    }
                 }
             }
             is ImageResult.Error -> {
-                withContext(Dispatchers.Main) {
-                    target.onError()
+                synchronized(viewsSourcesMap) {
+                    if (targetMatchesRequest(target, request)) {
+                        viewsSourcesMap.remove(target.getId())
+                    }
+                    CoroutineScope(Dispatchers.Main).launch {
+                        target.onError()
+                    }
                 }
             }
         }
+    }
+
+    private fun targetMatchesRequest(target: Target, request: Request) : Boolean {
+        return viewsSourcesMap[target.getId()] == request.asString()
     }
 
 }

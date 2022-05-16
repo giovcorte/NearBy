@@ -1,6 +1,7 @@
 package com.nearbyapp.nearby.components
 
-import com.nearbyapp.nearby.loader.cache.ImageCache
+import com.nearbyapp.nearby.loader.Request
+import com.nearbyapp.nearby.loader.cache.IImageCache
 import com.nearbyapp.nearby.model.nearby.Photo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -8,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class ImageStorageHelper(private val folder: File, private val imageCache: ImageCache) {
+class ImageStorageHelper(private val folder: File, private val imageCache: IImageCache) {
 
     private var listener: Listener? = null
 
@@ -42,12 +43,12 @@ class ImageStorageHelper(private val folder: File, private val imageCache: Image
         return "$id-$index"
     }
 
-    private fun storeImages(baseName: String, images: List<String>): Boolean {
+    private suspend fun storeImages(baseName: String, images: List<String>): Boolean {
         images.withIndex().iterator().forEach { link ->
             val key = link.value
             val fileName = getImageId(baseName, link.index)
 
-            val success = imageCache.dumps(key, fileName, folder)
+            val success = imageCache.dumps(Request.just(key), File(folder, fileName))
 
             if (!success){
                 return false

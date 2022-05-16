@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'kotlin-kapt'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.6.10'
 }
 
 android {
@@ -46,16 +47,17 @@ dependencies {
     def room_version = "2.4.2"
 
     implementation "androidx.room:room-runtime:$room_version"
-    //implementation "androidx.room:room-coroutines:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
 
-    // view binding library
-    implementation 'com.github.giovcorte.DataBinding:annotations:1.1.1'
-    implementation 'com.github.giovcorte.DataBinding:databinding:1.1.1'
-    implementation 'com.github.giovcorte.DataBinding:compiler:1.1.1'
+    // caching library
+    implementation 'com.github.giovcorte:DiskCache:1.2'
 
-    kapt 'com.github.giovcorte.DataBinding:compiler:1.1.1'
+    // view binding library
+    implementation 'com.github.giovcorte.DataBinding:annotations:1.2.1'
+    implementation 'com.github.giovcorte.DataBinding:databinding:1.2.1'
+    implementation 'com.github.giovcorte.DataBinding:compiler:1.2.1'
+    kapt 'com.github.giovcorte.DataBinding:compiler:1.2.1'
 
     // maps
     implementation 'com.google.android.gms:play-services-location:19.0.1'
@@ -72,7 +74,7 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-gson:2.9.0"
 
     // lifecycle
-    def lifecycle_version = "2.5.0-alpha06"
+    def lifecycle_version = "2.5.0-beta01"
 
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
@@ -81,8 +83,6 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     //noinspection LifecycleAnnotationProcessorWithJava8
     kapt "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
-
-    implementation 'com.squareup.picasso:picasso:2.71828'
 
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.4.1'

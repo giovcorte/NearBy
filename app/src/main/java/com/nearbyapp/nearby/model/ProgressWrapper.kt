@@ -1,11 +1,15 @@
 package com.nearbyapp.nearby.model
 
 import com.databinding.annotations.BindableObject
-import com.databinding.databinding.IData
+import com.nearbyapp.nearby.recycler.Identifiable
 import com.nearbyapp.nearby.widget.ItemSpinner
 
 @BindableObject(view = ItemSpinner::class)
-data class ProgressWrapper(val indefinite: Boolean = true): IData {
+data class ProgressWrapper(val indefinite: Boolean = true): Identifiable {
+    override fun id(): String {
+        return "progress-wrapper"
+    }
+
     override fun name(): String {
         return "ProgressWrapper"
     }

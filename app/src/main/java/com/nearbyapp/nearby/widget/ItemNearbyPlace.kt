@@ -13,7 +13,7 @@ import com.nearbyapp.nearby.R
 @BindableView
 class ItemNearbyPlace(context: Context): ConstraintLayout(context), IView {
 
-    @BindWith(paths = ["NearbyPlace.thumbnail:String"])
+    //@BindWith(paths = ["NearbyPlace.thumbnail:String"])
     val image: ImageView
     @BindWith(paths = ["NearbyPlace.name:String", "NearbyPlaceWrapper.detail.place_name:String"])
     val name: TextView

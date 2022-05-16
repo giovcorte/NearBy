@@ -2,15 +2,17 @@ package com.nearbyapp.nearby.components
 
 import android.content.SharedPreferences
 import com.nearbyapp.nearby.AppConstants
-import com.nearbyapp.nearby.model.RadiusPreference
-import com.nearbyapp.nearby.model.TravelMode
-import com.nearbyapp.nearby.model.TravelModePreference
+import com.nearbyapp.nearby.model.settings.CachePreference
+import com.nearbyapp.nearby.model.settings.RadiusPreference
+import com.nearbyapp.nearby.model.settings.TravelMode
+import com.nearbyapp.nearby.model.settings.TravelModePreference
 
 class PreferencesManager(private val sharedPreferences: SharedPreferences) {
 
     companion object {
         const val RADIUS = "radius"
         const val TRAVEL_MODE = "travel_model"
+        const val CACHE_FALLBACK_ENABLED = "cache-fallback-enabled"
     }
 
     fun getRadius(): RadiusPreference {
@@ -22,6 +24,17 @@ class PreferencesManager(private val sharedPreferences: SharedPreferences) {
         val editor = sharedPreferences.edit()
         editor.putInt(RADIUS, radius)
         editor.apply()
+    }
+
+    fun putCacheEnabled(boolean: Boolean) {
+        val editor = sharedPreferences.edit()
+        editor.putBoolean(CACHE_FALLBACK_ENABLED, boolean)
+        editor.apply()
+    }
+
+    fun getCacheEnabled() : CachePreference {
+        return CachePreference("In assenza di connessione, mostrare direttamente le ricerche recenti se presenti nella cache",
+            sharedPreferences.getBoolean(CACHE_FALLBACK_ENABLED, false))
     }
 
     fun getTravelMode(): TravelModePreference {

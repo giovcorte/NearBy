@@ -15,10 +15,12 @@ class ItemText: ConstraintLayout, IView {
 
     @BindWith(paths = ["TextWrapper.text:String"])
     val text: TextView
+    val container: ConstraintLayout
 
     init {
         LayoutInflater.from(context).inflate(R.layout.item_text, this)
         this.text = findViewById(R.id.text)
+        this.container = findViewById(R.id.text_container)
     }
 
     constructor(context: Context) : super(context)

@@ -1,10 +1,11 @@
 package com.nearbyapp.nearby.navigation
 
+import android.app.Activity
 import androidx.core.view.GravityCompat
 import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.R
 
-class NavigationManager(var activity: BaseActivity, var fragmentManager: IFragmentManager) {
+class NavigationManager(private val activity: BaseActivity, private val fragmentManager: IFragmentManager) {
 
     fun initNavigation(fragment: String) {
         fragmentManager.pushFirstFragment(fragment)
@@ -33,19 +34,26 @@ class NavigationManager(var activity: BaseActivity, var fragmentManager: IFragme
     }
 
     fun updateToolbar(title: String?) {
-        activity.getToolbar().title = title
-        if (!fragmentManager.isCurrentFragmentFirst()) {
-            activity.getToolbar().setNavigationIcon(R.drawable.arrow_back)
-            activity.getToolbar().setNavigationOnClickListener { backToPrevious() }
-        } else {
-            activity.getToolbar().setNavigationIcon(R.drawable.menu)
-            activity.getToolbar().setNavigationOnClickListener { activity.getDrawer().openDrawer(GravityCompat.START) }
+        activity.supportActionBar?.title = title
+        when {
+            !fragmentManager.isCurrentFragmentFirst() -> {
+                activity.getToolbar().setNavigationIcon(R.drawable.arrow_back)
+                activity.getToolbar().setNavigationOnClickListener { backToPrevious() }
+            }
+            else -> {
+                activity.getToolbar().setNavigationIcon(R.drawable.menu)
+                activity.getToolbar().setNavigationOnClickListener { activity.getDrawer().openDrawer(GravityCompat.START) }
+            }
         }
     }
 
     fun updateToolbarMenu(resId: Int) {
         activity.getToolbar().menu.clear()
-        activity.getToolbar().inflateMenu(resId)
+        activity.menuInflater.inflate(resId, activity.getToolbar().menu)
+    }
+
+    fun getActivityContext() : Activity {
+        return activity
     }
 
 }

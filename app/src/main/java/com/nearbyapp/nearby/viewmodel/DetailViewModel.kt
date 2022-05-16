@@ -3,9 +3,13 @@ package com.nearbyapp.nearby.viewmodel
 import android.app.Application
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.databinding.databinding.IData
+import com.google.android.gms.maps.model.PolylineOptions
 import com.nearbyapp.nearby.components.ResponseWrapper
+import com.nearbyapp.nearby.loader.Request
+import com.nearbyapp.nearby.model.TextWrapper
 import com.nearbyapp.nearby.model.detail.Detail
+import com.nearbyapp.nearby.recycler.Identifiable
+import com.nearbyapp.nearby.repository.DataSource
 import com.nearbyapp.nearby.viewmodel.livedata.ImagesLiveData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,7 +17,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class DetailViewModel(application: Application): AbstractDetailViewModel(application) {
-
 
     private var job: Job? = null
 
@@ -24,27 +27,36 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
     val favorite: MutableLiveData<Boolean> = MutableLiveData()
     val imagesState: ImagesLiveData = ImagesLiveData(application)
 
-    override fun loadDetails(id: String) {
+    override fun loadDetails(id: String, dataSource: DataSource) {
         loading.postValue(true)
         job = viewModelScope.launch {
-            when (val response = repository.getPlaceDetail(id)) {
+            when (val response = repository.getPlaceDetail(id, dataSource)) {
                 is ResponseWrapper.Success -> {
                     detail = response.value?.detail
                     val placeLat = response.value?.detail?.geometry?.location?.lat
                     val placeLng = response.value?.detail?.geometry?.location?.lng
-                    val polyline = getPolyline(repository.getPolyline(placeLat!!, placeLng!!, lat, lng))
+                    var polyline: PolylineOptions? = null
+                    if (dataSource != DataSource.CACHE) {
+                        polyline = getPolyline(repository.getPolyline(lat, lng, placeLat!!, placeLng!!))
+                    }
                     val fav = repository.existPlace(id)
                     withContext(Dispatchers.Main) {
-                        val details: MutableList<IData?> = mutableListOf()
-                        response.value.detail.let {
+                        val details: MutableList<Identifiable?> = mutableListOf()
+                        response.value?.detail?.let {
                             details.add(getImages(it.photos))
                             details.add(it)
-                            details.add(getMap(it, lat, lng, polyline))
+                            if (dataSource != DataSource.CACHE) {
+                                details.add(getMap(it, lat, lng, polyline))
+                            }
+                            details.add(getPhone(it))
+                            details.add(getWebSite(it))
                             details.add(getReviews(it))
                             details.add(it.opening_hours)
+                        } ?: run {
+                            details.add(TextWrapper("Nessun dettaglio disponibile"))
                         }
                         this@DetailViewModel.favorite.postValue(fav)
-                        this@DetailViewModel.details.postValue(details.filterNotNull().toMutableList())
+                        this@DetailViewModel.details.postValue(details.filterNotNull())
                         this@DetailViewModel.loading.postValue(false)
                     }
                 }
@@ -58,7 +70,7 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
             job = viewModelScope.launch {
                 if (!repository.existPlace(detail.place_id)) {
                     detail.photos?.mapIndexed { i, photo ->
-                        if (imageLoader.cache().contains(photo.link)) {
+                        if (imageLoader.cache().contains(Request.just(photo.link))) {
                             photo.id = imageStorageHelper.getImageId(detail.place_id, i)
                         }
                     }
@@ -69,9 +81,18 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
         }
     }
 
-    fun deletePlace() {
-        super.deleteDetails(detail!!)
-        favorite.postValue(false)
+    fun deleteDetails() {
+        detail?.let {
+            viewModelScope.launch {
+                it.photos?.forEach { photo ->
+                    photo.id?.let {
+                        imageStorageHelper.deleteStoredImage(it)
+                    }
+                }
+                repository.deletePlaceDetail(it.place_id)
+                favorite.postValue(false)
+            }
+        }
     }
 
     fun saveImage() {

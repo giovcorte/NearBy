@@ -3,8 +3,10 @@ package com.nearbyapp.nearby.viewmodel
 import android.app.Application
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.databinding.databinding.IData
 import com.nearbyapp.nearby.components.ResponseWrapper
+import com.nearbyapp.nearby.model.TextWrapper
+import com.nearbyapp.nearby.recycler.Identifiable
+import com.nearbyapp.nearby.repository.DataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -12,27 +14,38 @@ import kotlinx.coroutines.withContext
 
 class NearByViewModel(application: Application): BaseViewModel(application) {
 
-    val places: MutableLiveData<MutableList<IData>> = MutableLiveData()
+    private val places: MutableList<Identifiable> = mutableListOf()
+    val placesData: MutableLiveData<MutableList<Identifiable>> = MutableLiveData()
     var position: Int = 0
     var token: String? = null
 
-    var lat: Double = 0.0
-    var lng: Double = 0.0
+    var userLatitude: Double = 0.0
+    var userLongitude: Double = 0.0
 
     var job: Job? = null
 
-    fun loadPlaces(lat: Double, lng: Double, query: String) {
+    fun loadPlaces(latitude: Double, longitude: Double, query: String, dataSource: DataSource) {
         loading.postValue(true)
         job = viewModelScope.launch {
-            when (val response = repository.getNearbyPlaces(lat, lng, preferencesManager.getRadius().getRadiusInKm(), query)) {
+            when (val response = repository.getNearbyPlaces(
+                latitude,
+                longitude,
+                preferencesManager.getRadius().getRadiusInKm(),
+                query,
+                dataSource
+            )) {
                 is ResponseWrapper.Success -> {
                     withContext(Dispatchers.Main) {
                         token = response.value?.next_page_token
-                        places.postValue(response.value?.results?.map{
-                            it.userLat = lat
-                            it.userLng = lng
-                            it
-                        }?.toMutableList() )
+                        places.addAll(response.value?.results?.map{
+                            it.apply {
+                                userLat = latitude
+                                userLng = longitude
+                            }
+                        } ?: run {
+                            listOf(TextWrapper("Nessun luogo trovato"))
+                        })
+                        placesData.postValue(places)
                         loading.postValue(false)
                     }
                 }
@@ -41,22 +54,23 @@ class NearByViewModel(application: Application): BaseViewModel(application) {
         }
     }
 
-    fun loadMorePlaces() {
+    fun loadMorePlaces(dataSource: DataSource) {
         token?.let {
             job = viewModelScope.launch {
-                when (val response = repository.getMorePlaces(it)) {
+                when (val response = repository.getMorePlaces(it, dataSource)) {
                     is ResponseWrapper.Success -> {
                         withContext(Dispatchers.Main) {
                             token = response.value?.next_page_token
-                            val currentPlaces = places.value
                             val newPlaces = response.value?.results?.map{
-                                it.userLat = lat
-                                it.userLng = lng
+                                it.userLat = userLatitude
+                                it.userLng = userLongitude
                                 it
-                            }?.toMutableList()!!
-                            currentPlaces?.addAll(newPlaces)
-                            currentPlaces?.let {
-                                places.postValue(currentPlaces.toMutableList())
+                            }?.toMutableList()
+                            newPlaces?.let {
+                                places.addAll(it)
+                                placesData.postValue(places)
+                            } ?: run {
+                                placesData.postValue(places)
                             }
                             loading.postValue(false)
                         }

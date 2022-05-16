@@ -56,13 +56,30 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
         return null
     }
 
-    fun getPhone(detail: Detail) : Identifiable {
-        return HomeCategory(category = "Chiama", image = R.drawable.ic_call_36dp.toString(), standardAction = StandardAction.CALL_PHONE, data = detail.formatted_phone_number)
+    fun getPhone(detail: Detail) : Identifiable? {
+        return try {
+            HomeCategory(
+                category = "Chiama",
+                image = R.drawable.ic_call_36dp.toString(),
+                standardAction = StandardAction.CALL_PHONE,
+                data = detail.formatted_phone_number
+            )
+        } catch (_: Exception) {
+            null
+        }
     }
 
-    fun getWebSite(detail: Detail) : Identifiable {
-        return HomeCategory(category = "Apri il sito",
-                image = R.drawable.ic_website_36dp.toString(), standardAction = StandardAction.OPEN_BROWSER, data = detail.website)
+    fun getWebSite(detail: Detail) : Identifiable? {
+        return try {
+            HomeCategory(
+                category = "Apri il sito",
+                image = R.drawable.ic_website_36dp.toString(),
+                standardAction = StandardAction.OPEN_BROWSER,
+                data = detail.website
+            )
+        } catch (_: Exception) {
+            null
+        }
     }
 
 }

@@ -1,13 +1,22 @@
 package com.nearbyapp.nearby
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
+import android.widget.Toast.LENGTH_SHORT
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
@@ -18,16 +27,15 @@ import com.databinding.annotations.Inject
 import com.databinding.annotations.View
 import com.databinding.databinding.AdapterDataBinding
 import com.databinding.databinding.DataBinding
+import com.databinding.databinding.DataBindingHelper
+import com.databinding.databinding.IViewAction
 import com.databinding.databinding.adapter.GenericRecyclerViewAdapter
 import com.databinding.databinding.factory.ViewFactory
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
-import com.nearbyapp.nearby.components.Clipboard
-import com.nearbyapp.nearby.components.ImageStorageHelper
-import com.nearbyapp.nearby.components.PreferencesManager
-import com.nearbyapp.nearby.components.Status
+import com.nearbyapp.nearby.components.*
 import com.nearbyapp.nearby.loader.ImageLoader
 import com.nearbyapp.nearby.model.*
 import com.nearbyapp.nearby.model.detail.Detail
@@ -58,8 +66,8 @@ object BindingMethods {
                 ImageLoader.get().load(it).into(v.image).run()
             }
             v.setOnClickListener {
-                clipboard.putData("id", detail.place_id)
-                clipboard.putData("name", detail.place_name)
+                clipboard.wrapper("savedDetails").put("id", detail.place_id)
+                clipboard.wrapper("savedDetails").put("name", detail.place_name)
                 navigation.navigateTo("savedDetail")
             }
         }
@@ -157,16 +165,21 @@ object BindingMethods {
                 val file = imageStorage.getImageFile(photo.id)
                 ImageLoader.get().load(file!!).into(imageView).run()
             } else {
-                val drawable = CircularProgressDrawable(imageView.context)
-                drawable.setColorSchemeColors(
-                    color(imageView.context, R.color.colorPrimary),
-                    color(imageView.context, R.color.colorPrimaryDark),
-                    color(imageView.context, R.color.colorAccent))
-                drawable.centerRadius = 30f
-                drawable.strokeWidth = 5f
+                val drawable = getDefaultLoadingDrawable(imageView.context)
                 ImageLoader.get().load(photo.link).into(imageView, drawable).run()
             }
         }
+    }
+
+    fun getDefaultLoadingDrawable(context: Context) : Drawable {
+        val drawable = CircularProgressDrawable(context)
+        drawable.setColorSchemeColors(
+            color(context, R.color.colorPrimary),
+            color(context, R.color.colorPrimaryDark),
+            color(context, R.color.colorAccent))
+        drawable.centerRadius = 30f
+        drawable.strokeWidth = 5f
+        return drawable
     }
 
     @JvmStatic
@@ -243,13 +256,7 @@ object BindingMethods {
             if (Utils.isNumber(s)) {
                 ImageLoader.get().load(s.toInt()).into(v).run()
             } else {
-                val drawable = CircularProgressDrawable(v.context)
-                drawable.setColorSchemeColors(
-                    color(v.context, R.color.colorPrimary),
-                    color(v.context, R.color.colorPrimaryDark),
-                    color(v.context, R.color.colorAccent))
-                drawable.centerRadius = 30f
-                drawable.strokeWidth = 5f
+                val drawable = getDefaultLoadingDrawable(v.context)
                 ImageLoader.get().load(s).into(v, drawable).run()
             }
         }
@@ -264,8 +271,41 @@ object BindingMethods {
 
     @JvmStatic
     @BindingMethod
-    fun bindItemHome(@View view: ItemHome?, @Data data: HomeCategory?) {
+    fun bindItemHome(@View view: ItemHome?, @Data data: HomeCategory?, @Inject navigation: NavigationManager) {
         view?.text?.typeface = Typeface.DEFAULT_BOLD
+        DataBindingHelper.bindAction(view, object : IViewAction {
+            override fun onClick() {
+                handleStandardAction(data?.standardAction, data?.data, navigation.getActivityContext(), data?.action)
+            }
+        })
+    }
+
+    fun handleStandardAction(standardAction: StandardAction?, data: String?, context: Activity, default: IViewAction? = null) {
+        when (standardAction) {
+            StandardAction.CALL_PHONE -> {
+                if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.CALL_PHONE), 0)
+                    return
+                }
+                if (data != null && data != "") {
+                    val callIntent = Intent(Intent.ACTION_CALL).setData(Uri.parse("tel:${data}"))
+                    context.startActivity(callIntent)
+                } else {
+                    Toast.makeText(context, "Nessun numero di telefono disponibile", Toast.LENGTH_SHORT).show()
+                }
+            }
+            StandardAction.OPEN_BROWSER -> {
+                if (data != null && data != "") {
+                    val browser = Intent(Intent.ACTION_VIEW, Uri.parse(data))
+                    context.startActivity(browser)
+                } else {
+                    Toast.makeText(context, "Questo luogo non ha un sito web disponibile", LENGTH_SHORT).show()
+                }
+            }
+            else -> {
+                default?.onClick()
+            }
+        }
     }
 
     @JvmStatic
@@ -273,20 +313,14 @@ object BindingMethods {
     fun bindNearbyPlace(@View view: ItemNearbyPlace?, @Data data: NearbyPlace?, @Inject navigation: NavigationManager, @Inject clipboard: Clipboard) {
         view?.image?.visibility = if (data?.thumbnail != null) VISIBLE else GONE
         safeLet(view, data?.thumbnail) { v, thumbnail ->
-            val drawable = CircularProgressDrawable(v.context)
-            drawable.setColorSchemeColors(
-                color(v.context, R.color.colorPrimary),
-                color(v.context, R.color.colorPrimaryDark),
-                color(v.context, R.color.colorAccent))
-            drawable.centerRadius = 30f
-            drawable.strokeWidth = 5f
+            val drawable = getDefaultLoadingDrawable(v.context)
             ImageLoader.get().load(thumbnail).into(v.image, drawable).tag(data!!.place_id).run()
         }
         view?.setOnClickListener {
-            clipboard.putData("name", data!!.name)
-            clipboard.putData("id", data.place_id)
-            clipboard.putData("lat", data.userLat)
-            clipboard.putData("lng", data.userLng)
+            clipboard.wrapper("detail").put("name", data!!.name)
+            clipboard.wrapper("detail").put("id", data.place_id)
+            clipboard.wrapper("detail").put("lat", data.userLat)
+            clipboard.wrapper("detail").put("lng", data.userLng)
             navigation.navigateTo("detail")
         }
     }
@@ -300,10 +334,13 @@ object BindingMethods {
     @BindingMethod
     fun bindOpeningHours(@View view: TextView?, @Data data: OpeningHours?) {
         data?.open_now?.let {
-            if (it) {
-                view?.text = view?.context?.getString(R.string.open)
-            } else {
-                view?.text = view?.context?.getString(R.string.closed)
+            when {
+                it -> {
+                    view?.text = view?.context?.getString(R.string.open)
+                }
+                else -> {
+                    view?.text = view?.context?.getString(R.string.closed)
+                }
             }
         }
     }

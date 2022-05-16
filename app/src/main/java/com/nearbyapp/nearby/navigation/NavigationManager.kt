@@ -1,10 +1,11 @@
 package com.nearbyapp.nearby.navigation
 
+import android.app.Activity
 import androidx.core.view.GravityCompat
 import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.R
 
-class NavigationManager(var activity: BaseActivity, var fragmentManager: IFragmentManager) {
+class NavigationManager(private val activity: BaseActivity, private val fragmentManager: IFragmentManager) {
 
     fun initNavigation(fragment: String) {
         fragmentManager.pushFirstFragment(fragment)
@@ -48,7 +49,11 @@ class NavigationManager(var activity: BaseActivity, var fragmentManager: IFragme
 
     fun updateToolbarMenu(resId: Int) {
         activity.getToolbar().menu.clear()
-        activity.getToolbar().inflateMenu(resId)
+        activity.menuInflater.inflate(resId, activity.getToolbar().menu)
+    }
+
+    fun getActivityContext() : Activity {
+        return activity
     }
 
 }

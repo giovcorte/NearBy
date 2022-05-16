@@ -35,7 +35,7 @@ abstract class ListFragment: BaseFragment() {
         recyclerView = rootView.findViewById(R.id.list)
         progressView = rootView.findViewById(R.id.progressBar)
         errorView = rootView.findViewById(R.id.errorView)
-        linearLayoutManager = LinearLayoutManager(context)
+        linearLayoutManager = createLinearLayoutManager()
         adapter = GenericUpdatableRecyclerViewAdapter(adapterDataBinding, viewFactory)
 
         recyclerView.layoutManager = linearLayoutManager
@@ -53,13 +53,13 @@ abstract class ListFragment: BaseFragment() {
         doOnViewCreated(view, savedInstanceState)
     }
 
-
-
     abstract fun doOnCreateView(inflater: LayoutInflater,
                                 container: ViewGroup?,
                                 savedInstanceState: Bundle?)
 
     abstract fun doOnViewCreated(view: View, savedInstanceState: Bundle?)
+
+    abstract fun createLinearLayoutManager() : LinearLayoutManager
 
     fun showLoadingView(loading: Boolean) {
         if (loading) {
@@ -108,11 +108,11 @@ abstract class ListFragment: BaseFragment() {
         show(recyclerView)
     }
 
-    fun position(): Int {
+    fun getCurrentListPosition(): Int {
         return linearLayoutManager.findFirstCompletelyVisibleItemPosition()
     }
 
-    fun scroll(position: Int) {
+    fun scrollListToPosition(position: Int) {
         linearLayoutManager.scrollToPosition(position)
     }
 

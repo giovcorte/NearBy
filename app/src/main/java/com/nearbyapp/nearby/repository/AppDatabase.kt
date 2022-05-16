@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.nearbyapp.nearby.model.detail.Detail
 
-@Database(entities = [Detail::class], version = 1)
+@Database(entities = [Detail::class], version = 2)
 @TypeConverters(ConverterMethods::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun placesDAO(): PlacesDAO
@@ -26,6 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         private fun buildDatabase(context: Context): AppDatabase {
             return Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
+                .fallbackToDestructiveMigration()
                 .build()
         }
 

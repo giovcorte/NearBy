@@ -2,18 +2,20 @@ package com.nearbyapp.nearby.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.PolylineOptions
+import com.nearbyapp.nearby.R
 import com.nearbyapp.nearby.components.ResponseWrapper
+import com.nearbyapp.nearby.components.StandardAction
 import com.nearbyapp.nearby.converters.PolylineParser
+import com.nearbyapp.nearby.model.HomeCategory
 import com.nearbyapp.nearby.model.ListWrapper
 import com.nearbyapp.nearby.model.MapWrapper
 import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.model.nearby.Photo
 import com.nearbyapp.nearby.recycler.Identifiable
 import com.nearbyapp.nearby.repository.DataSource
-import kotlinx.coroutines.launch
 import org.json.JSONObject
+
 
 abstract class AbstractDetailViewModel(application: Application): BaseViewModel(application) {
 
@@ -54,13 +56,13 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
         return null
     }
 
-    open fun deleteDetails(detail: Detail) {
-        viewModelScope.launch {
-            detail.photos?.forEach {
-                imageStorageHelper.deleteStoredImage(it.id!!)
-            }
-            repository.deletePlaceDetail(detail.place_id)
-        }
+    fun getPhone(detail: Detail) : Identifiable {
+        return HomeCategory(category = "Chiama", image = R.drawable.ic_call_36dp.toString(), standardAction = StandardAction.CALL_PHONE, data = detail.formatted_phone_number)
+    }
+
+    fun getWebSite(detail: Detail) : Identifiable {
+        return HomeCategory(category = "Apri il sito",
+                image = R.drawable.ic_website_36dp.toString(), standardAction = StandardAction.OPEN_BROWSER, data = detail.website)
     }
 
 }

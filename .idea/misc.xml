@@ -4,7 +4,13 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="../../../../layout/custom_preview.xml" value="0.3527777777777778" />
+        <entry key="app/src/main/res/drawable-v24/ic_call_36dp.xml" value="0.1435" />
+        <entry key="app/src/main/res/drawable-v24/ic_directions_36dp.xml" value="0.1435" />
+        <entry key="app/src/main/res/drawable-v24/ic_directions_car_black_36dp.xml" value="0.1435" />
+        <entry key="app/src/main/res/drawable-v24/ic_directions_walk_black_36dp.xml" value="0.1435" />
+        <entry key="app/src/main/res/drawable-v24/ic_explore_black_36dp.xml" value="0.1435" />
         <entry key="app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.2315" />
+        <entry key="app/src/main/res/drawable-v24/ic_website_36dp.xml" value="0.1435" />
         <entry key="app/src/main/res/drawable/arrow_back.xml" value="0.3472222222222222" />
         <entry key="app/src/main/res/drawable/background_rounded_white.xml" value="0.2005" />
         <entry key="app/src/main/res/drawable/ic_loading.xml" value="0.2315" />
@@ -32,6 +38,7 @@
         <entry key="app/src/main/res/layout/item_calendar.xml" value="0.3473731884057971" />
         <entry key="app/src/main/res/layout/item_card_list.xml" value="0.3473731884057971" />
         <entry key="app/src/main/res/layout/item_detail.xml" value="0.3473731884057971" />
+        <entry key="app/src/main/res/layout/item_home.xml" value="0.1778115501519757" />
         <entry key="app/src/main/res/layout/item_map.xml" value="0.3473731884057971" />
         <entry key="app/src/main/res/layout/item_nearby_place.xml" value="0.3473731884057971" />
         <entry key="app/src/main/res/layout/item_photo.xml" value="0.3473731884057971" />

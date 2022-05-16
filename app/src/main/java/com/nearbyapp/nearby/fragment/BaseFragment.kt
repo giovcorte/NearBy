@@ -3,6 +3,7 @@ package com.nearbyapp.nearby.fragment
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import com.databinding.databinding.AdapterDataBinding
 import com.databinding.databinding.DataBinding
@@ -25,10 +26,12 @@ abstract class BaseFragment: Fragment() {
     lateinit var dataBinding: DataBinding
     lateinit var adapterDataBinding: AdapterDataBinding
     lateinit var viewFactory: ViewFactory
+    lateinit var baseActivity: BaseActivity
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is BaseActivity) {
+            baseActivity = context
             navigationManager = context.navigationManager
             clipboard = context.clipboard
             preferencesManager = context.preferencesManager
@@ -53,7 +56,11 @@ abstract class BaseFragment: Fragment() {
     }
 
     fun dialog(title: String, message: String) {
-        (requireActivity() as BaseActivity).dialog(title,message)
+        (requireActivity() as BaseActivity).showDialog(title,message)
+    }
+
+    fun getToolbar() : Toolbar {
+        return baseActivity.getToolbar()
     }
 
 }

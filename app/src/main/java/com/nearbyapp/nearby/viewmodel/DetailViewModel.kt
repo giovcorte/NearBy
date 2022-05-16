@@ -47,6 +47,8 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
                             if (dataSource != DataSource.CACHE) {
                                 details.add(getMap(it, lat, lng, polyline))
                             }
+                            details.add(getPhone(it))
+                            details.add(getWebSite(it))
                             details.add(getReviews(it))
                             details.add(it.opening_hours)
                         } ?: run {
@@ -78,9 +80,18 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
         }
     }
 
-    fun deletePlace() {
-        super.deleteDetails(detail!!)
-        favorite.postValue(false)
+    fun deleteDetails() {
+        detail?.let {
+            viewModelScope.launch {
+                it.photos?.forEach { photo ->
+                    photo.id?.let {
+                        imageStorageHelper.deleteStoredImage(it)
+                    }
+                }
+                repository.deletePlaceDetail(it.place_id)
+                favorite.postValue(false)
+            }
+        }
     }
 
     fun saveImage() {

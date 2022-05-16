@@ -7,7 +7,7 @@ import android.location.LocationManager
 import androidx.lifecycle.MutableLiveData
 import com.nearbyapp.nearby.components.GPSReceiver
 
-class LocationSensorLiveData(val application: Application): MutableLiveData<Boolean>()/*, LocationListener*/ {
+class LocationSensorLiveData(val application: Application): MutableLiveData<Boolean>() {
 
     private var locationManager: LocationManager = (application.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
 
@@ -28,7 +28,6 @@ class LocationSensorLiveData(val application: Application): MutableLiveData<Bool
 
     override fun onActive() {
         super.onActive()
-        //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, this)
         application.registerReceiver(gpsReceiver, IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION))
         application.registerReceiver(gpsReceiver, IntentFilter(LocationManager.MODE_CHANGED_ACTION))
     }
@@ -48,26 +47,5 @@ class LocationSensorLiveData(val application: Application): MutableLiveData<Bool
         }
         return true
     }
-
-    /*
-    override fun onLocationChanged(p0: Location) {
-
-    }
-
-    override fun onProviderDisabled(provider: String) {
-        super.onProviderDisabled(provider)
-        if (provider == LocationManager.GPS_PROVIDER) {
-            postValue(false)
-        }
-    }
-
-    override fun onProviderEnabled(provider: String) {
-        super.onProviderEnabled(provider)
-        if (provider == LocationManager.GPS_PROVIDER) {
-            postValue(true)
-        }
-    }
-
-     */
 
 }

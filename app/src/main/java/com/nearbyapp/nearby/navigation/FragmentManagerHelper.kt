@@ -8,11 +8,11 @@ import com.nearbyapp.nearby.fragment.FragmentFactory
 class FragmentManagerHelper(private var host: Int, private var fragmentManager: FragmentManager):
     IFragmentManager {
 
-    private val ARRAY_STATE_KEY = "array-state-key"
-    private val FIRST_FRAGMENT_TAG = "first-fragment-tag"
-    private val OVER_FRAGMENT_TAG = "single-fragment-tag"
-
     companion object {
+        private const val ARRAY_STATE_KEY = "array-state-key"
+        private const val FIRST_FRAGMENT_TAG = "first-fragment-tag"
+        private const val OVER_FRAGMENT_TAG = "single-fragment-tag"
+
         private var fragmentTagStack: ArrayList<String> = ArrayList()
     }
 
@@ -54,8 +54,10 @@ class FragmentManagerHelper(private var host: Int, private var fragmentManager: 
 
     override fun popOverFragment() {
         if (isCurrentFragmentOver()) {
+            val fragmentTag = fragmentTagStack[fragmentTagStack.size - 1]
             fragmentTagStack.removeAt(fragmentTagStack.size - 1)
             fragmentManager.popBackStack()
+            notifyFragmentRemoved(fragmentTag)
         }
     }
 
@@ -63,14 +65,15 @@ class FragmentManagerHelper(private var host: Int, private var fragmentManager: 
         if (canPopBackStack()) {
             if (isCurrentFragmentOver()) {
                 fragmentTagStack.removeAt(fragmentTagStack.size - 1)
-
                 val fragmentTag = fragmentTagStack[fragmentTagStack.size - 1]
                 fragmentTagStack.removeAt(fragmentTagStack.size - 1)
-
                 fragmentManager.popBackStack(fragmentTag, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                notifyFragmentRemoved(fragmentTag)
             } else {
+                val fragmentTag = fragmentTagStack[fragmentTagStack.size - 1]
                 fragmentTagStack.removeAt(fragmentTagStack.size - 1)
                 fragmentManager.popBackStack()
+                notifyFragmentRemoved(fragmentTag)
             }
         }
     }
@@ -85,6 +88,7 @@ class FragmentManagerHelper(private var host: Int, private var fragmentManager: 
                 if (currentFragmentName != name) {
                     fragmentEntryIndex--
                     fragmentAreaTagsIndex--
+                    notifyFragmentRemoved(fragmentTagStack[i])
                 } else {
                     fragmentEntryIndex++
                     if (fragmentEntryIndex < fragmentTagStack.size) {
@@ -112,6 +116,7 @@ class FragmentManagerHelper(private var host: Int, private var fragmentManager: 
                 if (tag != fragmentTagStack[i]) {
                     fragmentEntryIndex--
                     fragmentAreaTagsIndex--
+                    notifyFragmentRemoved(fragmentTagStack[i])
                 } else {
                     fragmentEntryIndex++
                     if (fragmentEntryIndex < fragmentTagStack.size) {
@@ -171,9 +176,17 @@ class FragmentManagerHelper(private var host: Int, private var fragmentManager: 
     }
 
     private fun getFragmentName(tag: String): String {
-        return if (tag.contains(":")) {
-            tag.split(":").toTypedArray()[0]
-        } else tag
+        return if (tag.contains(":")) tag.split(":").toTypedArray()[0] else tag
+    }
+
+    private fun notifyFragmentRemoved(key: String) {
+        for (listener in fragmentListeners) {
+            if (listener.tagInsteadOfNameRequired()) {
+                listener.onFragmentRemoved(key)
+            } else {
+                listener.onFragmentRemoved(getFragmentName(key))
+            }
+        }
     }
 
     private fun getLastTag(isOverFragment: Boolean): String {

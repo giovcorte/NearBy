@@ -24,7 +24,8 @@ data class Detail (
     @SerializedName("place_id") @PrimaryKey var place_id : String,
     @SerializedName("price_level") @ColumnInfo(name = "price") var price_level : Int,
     @SerializedName("rating") @ColumnInfo var rating : Double?,
-    @SerializedName("reviews") @ColumnInfo var reviews : List<Review>?
+    @SerializedName("reviews") @ColumnInfo var reviews : List<Review>?,
+    @SerializedName("website") @ColumnInfo var website : String = ""
 ) : IData, Identifiable {
 
     override fun name(): String {

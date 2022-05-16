@@ -23,6 +23,8 @@ class SavedDetailViewModel(application: Application): AbstractDetailViewModel(ap
                                 photo.id != null
                             }))
                             detailsList.add(it)
+                            detailsList.add(getPhone(it))
+                            detailsList.add(getWebSite(it))
                             detailsList.add(getReviews(it))
                             detailsList.add(it.opening_hours)
                             details.postValue(detailsList.filterNotNull())

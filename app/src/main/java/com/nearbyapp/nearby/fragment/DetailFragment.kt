@@ -7,10 +7,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.R
 import com.nearbyapp.nearby.components.ImageStorageHelper
 import com.nearbyapp.nearby.components.Status
+import com.nearbyapp.nearby.model.HomeCategory
 import com.nearbyapp.nearby.repository.DataSource
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.DetailViewModel
@@ -32,7 +36,7 @@ class DetailFragment: ListFragment() {
                 viewModel.saveImage()
                 return true
             } else if (item.itemId == R.id.unsave) {
-                viewModel.deletePlace()
+                viewModel.deleteDetails()
                 return true
             }
             return true
@@ -47,10 +51,10 @@ class DetailFragment: ListFragment() {
         activityViewModel = ViewModelProvider(requireActivity())[ActivityViewModel::class.java]
         viewModel = ViewModelProvider(this)[DetailViewModel::class.java]
 
-        id = clipboard.getData("id") as String
-        name = clipboard.getData("name") as String
-        viewModel.lat = clipboard.getData("lat") as Double
-        viewModel.lng = clipboard.getData("lng") as Double
+        id = clipboard.wrapper("detail").get("id") as String
+        name = clipboard.wrapper("detail").get("name") as String
+        viewModel.lat = clipboard.wrapper("detail").get("lat") as Double
+        viewModel.lng = clipboard.wrapper("detail").get("lng") as Double
         navigationManager.updateToolbar(name)
         (activity as BaseActivity).registerMenuListener(menuListener)
     }
@@ -106,6 +110,17 @@ class DetailFragment: ListFragment() {
         }
     }
 
+    override fun createLinearLayoutManager(): LinearLayoutManager {
+        val layoutManager = GridLayoutManager(context, 2)
+        layoutManager.spanSizeLookup = object : SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                val item = adapter.getItem(position)
+                return if (item is HomeCategory) 1 else 2
+            }
+        }
+        return layoutManager
+    }
+
     private fun loadPlaceDetails() {
         cleanErrorView()
         loading = true
@@ -115,6 +130,7 @@ class DetailFragment: ListFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         imageLoader.abort()
+        (activity as BaseActivity).unregisterMenuListener()
     }
 
 }

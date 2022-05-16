@@ -99,7 +99,7 @@ class BaseActivity : AppCompatActivity() {
         }
     }
 
-    fun dialog(title: String, message: String) {
+    fun showDialog(title: String, message: String) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(title)
         builder.setMessage(message)

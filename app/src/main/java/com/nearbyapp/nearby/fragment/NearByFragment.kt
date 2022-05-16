@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nearbyapp.nearby.components.Status
 import com.nearbyapp.nearby.repository.DataSource
@@ -17,6 +18,7 @@ class NearByFragment: LocalizationFragmentV2() {
     private lateinit var viewModel: NearByViewModel
     private lateinit var activityViewModel: ActivityViewModel
 
+    private var fromUser: Boolean = false
     private var query: String? = null
     private var dataSource: DataSource = DataSource.SERVICE
 
@@ -27,7 +29,7 @@ class NearByFragment: LocalizationFragmentV2() {
     ) {
         activityViewModel = ViewModelProvider(requireActivity())[ActivityViewModel::class.java]
         viewModel = ViewModelProvider(this)[NearByViewModel::class.java]
-        scroll(viewModel.position)
+        scrollListToPosition(viewModel.position)
         setScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -44,7 +46,8 @@ class NearByFragment: LocalizationFragmentV2() {
                     }
             }
         })
-        query = clipboard.getData("query") as String
+        query = clipboard.wrapper("near").get("query") as String
+        fromUser = clipboard.wrapper("near").get("fromUser") as Boolean
         navigationManager.updateToolbar(query)
     }
 
@@ -81,6 +84,10 @@ class NearByFragment: LocalizationFragmentV2() {
         }
     }
 
+    override fun createLinearLayoutManager(): LinearLayoutManager {
+        return LinearLayoutManager(context)
+    }
+
     private fun loadPlaces() {
         cleanErrorView()
         loading = true
@@ -98,7 +105,7 @@ class NearByFragment: LocalizationFragmentV2() {
 
     override fun onStop() {
         super.onStop()
-        viewModel.position = position()
+        viewModel.position = getCurrentListPosition()
     }
 
     override fun onDestroyView() {

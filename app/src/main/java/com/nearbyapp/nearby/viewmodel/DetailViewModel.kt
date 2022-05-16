@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.PolylineOptions
 import com.nearbyapp.nearby.components.ResponseWrapper
+import com.nearbyapp.nearby.loader.Request
 import com.nearbyapp.nearby.model.TextWrapper
 import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.recycler.Identifiable
@@ -69,7 +70,7 @@ class DetailViewModel(application: Application): AbstractDetailViewModel(applica
             job = viewModelScope.launch {
                 if (!repository.existPlace(detail.place_id)) {
                     detail.photos?.mapIndexed { i, photo ->
-                        if (imageLoader.cache().contains(photo.link)) {
+                        if (imageLoader.cache().contains(Request.just(photo.link))) {
                             photo.id = imageStorageHelper.getImageId(detail.place_id, i)
                         }
                     }

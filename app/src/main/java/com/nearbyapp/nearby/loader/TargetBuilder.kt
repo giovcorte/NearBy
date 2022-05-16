@@ -5,12 +5,12 @@ import android.widget.ImageView
 
 class TargetBuilder {
 
-    fun create(view: ImageView?, source: String): Target {
-        return ImageWrapper(view, source)
+    fun create(view: ImageView?): Target {
+        return ImageWrapper(view)
     }
 
-    fun create(view: ImageView?, source: String, placeHolder: Drawable): Target {
-        return ImageWrapper(view, source, placeHolder)
+    fun create(view: ImageView?, placeHolder: Drawable): Target {
+        return ImageWrapper(view, placeHolder)
     }
 
 }

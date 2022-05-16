@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.widget.ImageView
+import com.nearbyapp.nearby.loader.cache.IImageCache
 import com.nearbyapp.nearby.loader.cache.ImageCache
 import com.nearbyapp.nearby.loader.fetcher.Fetcher
 import com.nearbyapp.nearby.loader.fetcher.FileFetcher
@@ -26,7 +27,7 @@ class ImageLoader(
         }
     }
 
-    private val imageCache: ImageCache = ImageCache(application)
+    private val imageCache: IImageCache = ImageCache(application)
 
     private val urlFetcher: URLFetcher = URLFetcher()
     private val fileFetcher: FileFetcher = FileFetcher()
@@ -45,46 +46,41 @@ class ImageLoader(
         private var request: Request? = null
         private var target: Target? = null
         private var fetcher: Fetcher? = null
-        private var cache: ImageCache.CachingStrategy = ImageCache.CachingStrategy.ALL
-        private var tag: String? = null
 
         fun into(target: Target) = apply { this.target = target }
 
-        fun into(view: ImageView?) = apply { this.target = loader.targetBuilder.create(view, request!!.asString())}
+        fun into(view: ImageView?) = apply { this.target = loader.targetBuilder.create(view)}
 
         fun into(view: ImageView?, placeHolder: Drawable) = apply {
-            this.target = loader.targetBuilder.create(view, request!!.asString(), placeHolder)
+            this.target = loader.targetBuilder.create(view, placeHolder)
         }
 
         fun load(url: String) = apply {
             this.request = loader.requestBuilder.create(url)
             this.fetcher = loader.urlFetcher
-            this.cache = ImageCache.CachingStrategy.ALL
         }
 
         fun load(file: File) = apply {
             this.request = loader.requestBuilder.create(file)
             this.fetcher = loader.fileFetcher
-            this.cache = ImageCache.CachingStrategy.NONE
         }
 
         fun load(res: Int) = apply {
             this.request = loader.requestBuilder.create(res)
             this.fetcher = loader.resourceFetcher
-            this.cache = ImageCache.CachingStrategy.NONE
         }
 
         fun cache(cache: ImageCache.CachingStrategy) = apply {
-            this.cache = cache
+            (request as RequestWrapper).setCache(cache)
         }
 
         fun tag(tag: String) = apply {
-            this.tag = tag
+            (request as RequestWrapper).setTag(tag)
         }
 
         fun run() {
             safe(request, target, fetcher) { request, target, fetcher ->
-                loader.load(request, target, fetcher, cache, tag)
+                loader.load(request, target, fetcher)
             }
         }
 
@@ -98,26 +94,23 @@ class ImageLoader(
         request: Request,
         target: Target,
         fetcher: Fetcher,
-        cache: ImageCache.CachingStrategy,
-        tag: String?
     ) {
         coroutineScope.launch {
             synchronized(viewsSourcesMap) {
                 viewsSourcesMap[target.getId()] = request.asString()
             }
-            val cacheKey: String = tag ?: request.asString()
-            val cached = imageCache.contains(cacheKey)
+            val cached = imageCache.contains(request)
             withContext(Dispatchers.Main) {
                 target.onProcessing(cached)
             }
-            val result: ImageResult<Bitmap> = imageCache.get(cacheKey)?.let {
+            val result: ImageResult<Bitmap> = imageCache.get(request)?.let {
                 Log.d("DISKCACHE", "CACHE")
-                ImageResult.Success(it)
+                ImageResult.Success(it, cached)
             } ?: run {
                 Log.d("DISKCACHE", "URL")
                 fetcher.fetch(request)
             }
-            submit(request, target, result, cache, cacheKey)
+            submit(request, target, result)
         }
     }
 
@@ -125,11 +118,11 @@ class ImageLoader(
         coroutineScope.coroutineContext.cancelChildren()
     }
 
-    fun clear() {
+    suspend fun clear() {
         imageCache.clear()
     }
 
-    fun cache(): ImageCache {
+    fun cache(): IImageCache {
         return imageCache
     }
 
@@ -137,14 +130,15 @@ class ImageLoader(
         request: Request,
         target: Target,
         result: ImageResult<Bitmap>,
-        cache: ImageCache.CachingStrategy,
-        cacheKey: String
     ) {
         when (result) {
             is ImageResult.Success -> {
-                imageCache.put(cacheKey, result.value, cache)
+                if (!result.fromCache) {
+                    imageCache.put(request, result.value)
+                }
                 synchronized(viewsSourcesMap) {
-                    if (viewsSourcesMap[target.getId()] == request.asString()) {
+                    if (targetMatchesRequest(target, request)) {
+                        viewsSourcesMap.remove(target.getId())
                         CoroutineScope(Dispatchers.Main).launch {
                             target.onSuccess(result.value)
                         }
@@ -152,11 +146,20 @@ class ImageLoader(
                 }
             }
             is ImageResult.Error -> {
-                withContext(Dispatchers.Main) {
-                    target.onError()
+                synchronized(viewsSourcesMap) {
+                    if (targetMatchesRequest(target, request)) {
+                        viewsSourcesMap.remove(target.getId())
+                    }
+                    CoroutineScope(Dispatchers.Main).launch {
+                        target.onError()
+                    }
                 }
             }
         }
+    }
+
+    private fun targetMatchesRequest(target: Target, request: Request) : Boolean {
+        return viewsSourcesMap[target.getId()] == request.asString()
     }
 
 }

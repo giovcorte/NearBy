@@ -10,7 +10,6 @@ import java.lang.ref.WeakReference
 
 class ImageWrapper(
     imageView: ImageView?,
-    private val source: String,
     private val placeHolder: Drawable? = null
 ) : Target {
 

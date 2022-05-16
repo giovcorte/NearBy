@@ -5,7 +5,6 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.databinding.annotations.BindableObject
-import com.databinding.databinding.IData
 import com.google.gson.annotations.SerializedName
 import com.nearbyapp.nearby.model.nearby.Geometry
 import com.nearbyapp.nearby.model.nearby.Photo
@@ -26,7 +25,7 @@ data class Detail (
     @SerializedName("rating") @ColumnInfo var rating : Double?,
     @SerializedName("reviews") @ColumnInfo var reviews : List<Review>?,
     @SerializedName("website") @ColumnInfo var website : String = ""
-) : IData, Identifiable {
+) : Identifiable {
 
     override fun name(): String {
         return "Detail"

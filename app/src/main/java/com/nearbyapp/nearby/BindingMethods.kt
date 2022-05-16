@@ -16,6 +16,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -354,7 +355,11 @@ object BindingMethods {
     @JvmStatic
     @BindingMethod
     fun bindItemText(@View view: ItemText?, @Data data: TextWrapper?) {
-
+        safeLet(view, data) { v, d ->
+            if (d.matchParent) {
+                v.container.layoutParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT
+            }
+        }
     }
 
     private inline fun <T1: Any, T2: Any, R: Any> safeLet(p1: T1?, p2: T2?, block: (T1, T2)->R?): R? {

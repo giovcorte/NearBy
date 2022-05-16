@@ -10,6 +10,7 @@ import com.nearbyapp.nearby.converters.PolylineParser
 import com.nearbyapp.nearby.model.HomeCategory
 import com.nearbyapp.nearby.model.ListWrapper
 import com.nearbyapp.nearby.model.MapWrapper
+import com.nearbyapp.nearby.model.TextWrapper
 import com.nearbyapp.nearby.model.detail.Detail
 import com.nearbyapp.nearby.model.nearby.Photo
 import com.nearbyapp.nearby.recycler.Identifiable
@@ -56,7 +57,7 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
         return null
     }
 
-    fun getPhone(detail: Detail) : Identifiable? {
+    fun getPhone(detail: Detail) : Identifiable {
         return try {
             HomeCategory(
                 category = "Chiama",
@@ -65,11 +66,11 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
                 data = detail.formatted_phone_number
             )
         } catch (_: Exception) {
-            null
+            TextWrapper("Nessun numero di telefono", true)
         }
     }
 
-    fun getWebSite(detail: Detail) : Identifiable? {
+    fun getWebSite(detail: Detail) : Identifiable {
         return try {
             HomeCategory(
                 category = "Apri il sito",
@@ -78,7 +79,7 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
                 data = detail.website
             )
         } catch (_: Exception) {
-            null
+            TextWrapper("Nessun sito web", true)
         }
     }
 

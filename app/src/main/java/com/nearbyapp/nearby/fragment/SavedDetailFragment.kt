@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.nearbyapp.nearby.model.HomeCategory
+import com.nearbyapp.nearby.model.TextWrapper
 import com.nearbyapp.nearby.repository.DataSource
 import com.nearbyapp.nearby.viewmodel.SavedDetailViewModel
 
@@ -45,7 +46,7 @@ class SavedDetailFragment: ListFragment() {
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
                 val item = adapter.getItem(position)
-                return if (item is HomeCategory) 1 else 2
+                return if (item is HomeCategory || item is TextWrapper) 1 else 2
             }
         }
         return layoutManager

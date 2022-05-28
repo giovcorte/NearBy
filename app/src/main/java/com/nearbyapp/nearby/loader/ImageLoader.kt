@@ -11,71 +11,136 @@ import com.nearbyapp.nearby.loader.fetcher.Fetcher
 import com.nearbyapp.nearby.loader.fetcher.FileFetcher
 import com.nearbyapp.nearby.loader.fetcher.ResourceFetcher
 import com.nearbyapp.nearby.loader.fetcher.URLFetcher
+import com.nearbyapp.nearby.loader.target.CacheTargetWrapper
+import com.nearbyapp.nearby.loader.target.DownloadTargetWrapper
+import com.nearbyapp.nearby.loader.target.ImageTargetWrapper
 import kotlinx.coroutines.*
 import java.io.File
 
-class ImageLoader(
-    val application: Application,
-    private val coroutineScope: CoroutineScope = CoroutineScope(Job() + Dispatchers.IO)
-) {
+class ImageLoader {
+    private val coroutineScope: CoroutineScope
 
-    companion object {
-        lateinit var INSTANCE: ImageLoader
+    private val imageCache: IImageCache
 
-        fun get(): Builder {
-            return Builder(INSTANCE)
-        }
-    }
-
-    private val imageCache: IImageCache = ImageCache(application)
-
-    private val urlFetcher: URLFetcher = URLFetcher()
-    private val fileFetcher: FileFetcher = FileFetcher()
-    private val resourceFetcher: ResourceFetcher = ResourceFetcher(application)
-
-    private val requestBuilder: RequestBuilder = RequestBuilder(application)
-    private val targetBuilder: TargetBuilder = TargetBuilder()
+    private val urlFetcher: URLFetcher
+    private val fileFetcher: FileFetcher
+    private val resourceFetcher: ResourceFetcher
 
     private val viewsSourcesMap = LinkedHashMap<Int, String>()
+
+    constructor(
+        application: Application,
+        coroutineScope: CoroutineScope = CoroutineScope(Job() + Dispatchers.IO)
+    ) {
+        this.coroutineScope = coroutineScope
+        this.imageCache = ImageCache(application, DEFAULT_DISK_CACHE_SIZE, DEFAULT_APP_VERSION)
+        this.urlFetcher = URLFetcher()
+        this.fileFetcher=  FileFetcher()
+        this.resourceFetcher = ResourceFetcher(application)
+    }
+
+    constructor(
+        application: Application,
+        coroutineScope: CoroutineScope = CoroutineScope(Job() + Dispatchers.IO),
+        imageCache: IImageCache
+    ) {
+        this.coroutineScope = coroutineScope
+        this.imageCache = imageCache
+        this.urlFetcher = URLFetcher()
+        this.fileFetcher=  FileFetcher()
+        this.resourceFetcher = ResourceFetcher(application)
+    }
 
     init {
         INSTANCE = this
     }
 
-    class Builder(val loader: ImageLoader) {
-        private var request: Request? = null
-        private var target: Target? = null
-        private var fetcher: Fetcher? = null
+    class RequestBuilder(private val loader: ImageLoader) {
+        private lateinit var request: Request
+        private lateinit var fetcher: Fetcher
+        private var cache: IImageCache.CachingStrategy = IImageCache.CachingStrategy.PREDEFINED
+        private var tag: String? = null
 
-        fun into(target: Target) = apply { this.target = target }
-
-        fun into(view: ImageView?) = apply { this.target = loader.targetBuilder.create(view)}
-
-        fun into(view: ImageView?, placeHolder: Drawable) = apply {
-            this.target = loader.targetBuilder.create(view, placeHolder)
+        fun load(request: Request, fetcher: Fetcher) : TargetBuilder {
+            apply {
+                this.request = request
+                this.fetcher = fetcher
+                return TargetBuilder(loader, request, fetcher)
+            }
         }
 
-        fun load(url: String) = apply {
-            this.request = loader.requestBuilder.create(url)
-            this.fetcher = loader.urlFetcher
+        fun load(url: String) : TargetBuilder {
+            apply {
+                if (cache == IImageCache.CachingStrategy.PREDEFINED) {
+                    this.cache = IImageCache.CachingStrategy.ALL
+                }
+                this.request = RequestWrapper(url, tag, cache)
+                this.fetcher = loader.urlFetcher
+                return TargetBuilder(loader, request, fetcher)
+            }
         }
 
-        fun load(file: File) = apply {
-            this.request = loader.requestBuilder.create(file)
-            this.fetcher = loader.fileFetcher
+        fun load(file: File) : TargetBuilder {
+            apply {
+                if (cache == IImageCache.CachingStrategy.PREDEFINED) {
+                    this.cache = IImageCache.CachingStrategy.MEMORY
+                }
+                this.request = RequestWrapper(file.absolutePath, tag, cache)
+                this.fetcher = loader.fileFetcher
+                return TargetBuilder(loader, request, fetcher)
+            }
         }
 
-        fun load(res: Int) = apply {
-            this.request = loader.requestBuilder.create(res)
-            this.fetcher = loader.resourceFetcher
+        fun load(res: Int) : TargetBuilder {
+            apply {
+                if (cache == IImageCache.CachingStrategy.PREDEFINED) {
+                    this.cache = IImageCache.CachingStrategy.NONE
+                }
+                this.request = RequestWrapper(res.toString(), tag, cache)
+                this.fetcher = loader.resourceFetcher
+                return TargetBuilder(loader, request, fetcher)
+            }
         }
 
-        fun cache(cache: ImageCache.CachingStrategy) = apply {
-            (request as RequestWrapper).setCache(cache)
+        fun cache(cache: IImageCache.CachingStrategy) = apply {
+            this.cache = cache
         }
 
-        fun tag(tag: String) = apply {
-            (request as RequestWrapper).setTag(tag)
+        fun tag(tag: String?) = apply {
+            this.tag = tag
+        }
+    }
+
+    class TargetBuilder(
+        private val loader: ImageLoader,
+        private val request: Request,
+        private val fetcher: Fetcher,
+    ) {
+        private lateinit var target: Target
+
+        fun into(target: Target) = apply {
+            this.target = target
+        }
+
+        fun intoView(view: ImageView?) = apply {
+            this.target = ImageTargetWrapper(view)
+        }
+
+        fun intoView(view: ImageView?, placeHolder: Drawable) = apply {
+            this.target = ImageTargetWrapper(view, placeHolder)
+        }
+
+        fun intoView(view: ImageView?, placeHolder: Drawable?, errorPlaceHolder: Drawable?) = apply {
+            this.target = ImageTargetWrapper(view, placeHolder, errorPlaceHolder)
+        }
+
+        fun intoCache(callback: (success: Boolean) -> Unit = ::defaultCallback) = apply {
+            this.request
+            this.target = CacheTargetWrapper(request, loader.imageCache, loader.coroutineScope, callback)
+        }
+
+        fun intoFile(file: File, callback: (success: Boolean) -> Unit =::defaultCallback) = apply {
+            this.target = DownloadTargetWrapper(file, request, loader.imageCache, loader.coroutineScope, callback)
         }
 
         fun run() {
@@ -88,6 +153,9 @@ class ImageLoader(
             return if (p1 != null && p2 != null && p3 != null) block(p1, p2, p3) else null
         }
 
+        private fun defaultCallback(success: Boolean = true) {
+
+        }
     }
 
     private fun load(
@@ -104,10 +172,10 @@ class ImageLoader(
                 target.onProcessing(cached)
             }
             val result: ImageResult<Bitmap> = imageCache.get(request)?.let {
-                Log.d("DISKCACHE", "CACHE")
+                log("${request.asString()} from cache")
                 ImageResult.Success(it, cached)
             } ?: run {
-                Log.d("DISKCACHE", "URL")
+                log("${request.asString()} from source")
                 fetcher.fetch(request)
             }
             submit(request, target, result)
@@ -158,8 +226,31 @@ class ImageLoader(
         }
     }
 
+    fun logging(enabled: Boolean) {
+        LOGGING_ENABLED = enabled
+    }
+
+    private fun log(message: String) {
+        if (LOGGING_ENABLED) {
+            Log.d(IMAGE_LOADER_TAG, message)
+        }
+    }
+
     private fun targetMatchesRequest(target: Target, request: Request) : Boolean {
         return viewsSourcesMap[target.getId()] == request.asString()
+    }
+
+    companion object {
+        const val DEFAULT_DISK_CACHE_SIZE: Long = 1024 * 1024 * 200
+        const val DEFAULT_APP_VERSION: Int = 1
+        const val IMAGE_LOADER_TAG = "LightImageLoaderDownloader"
+
+        var LOGGING_ENABLED = false
+        lateinit var INSTANCE: ImageLoader
+
+        fun get(): RequestBuilder {
+            return RequestBuilder(INSTANCE)
+        }
     }
 
 }

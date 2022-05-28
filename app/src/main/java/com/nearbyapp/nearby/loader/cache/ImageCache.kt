@@ -13,35 +13,37 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-class ImageCache(context: Context) : IImageCache {
+class ImageCache(
+    context: Context,
+    diskSize: Long,
+    appVersion: Int
+) : IImageCache {
 
-    private val diskImageCache = AsyncImageDiskCache(DiskCache(File(context.cacheDir.path + File.separator + "imagescache"), 1024 * 1024 * 200, 1))
+    private val diskImageCache = AsyncImageDiskCache(DiskCache(File(context.cacheDir.path + File.separator + "imagescache"), diskSize, appVersion))
     private val memoryImageCache = ImageMemoryCache()
-
-    enum class CachingStrategy {
-        ALL, MEMORY, DISK, NONE
-    }
 
     override suspend fun get(request: Request): Bitmap? {
         val key = request.cachingKey()
         return if (memoryImageCache.contains(key)) memoryImageCache[key] else diskImageCache.get(key)
     }
 
-    override suspend fun put(request: Request, bitmap: Bitmap) {
+    override suspend fun put(request: Request, bitmap: Bitmap) : Boolean {
         val key = request.cachingKey()
+        var result = true
         when (request.cachingStrategy()) {
-            CachingStrategy.ALL -> {
+            IImageCache.CachingStrategy.ALL -> {
                 memoryImageCache.put(key, bitmap)
-                diskImageCache.put(key, bitmap)
+                result = diskImageCache.put(key, bitmap)
             }
-            CachingStrategy.DISK -> if (diskImageCache.get(key) == null) {
-                diskImageCache.put(key, bitmap)
+            IImageCache.CachingStrategy.DISK -> if (diskImageCache.get(key) == null) {
+                result = diskImageCache.put(key, bitmap)
             }
-            CachingStrategy.MEMORY -> if (memoryImageCache[key] == null) {
+            IImageCache.CachingStrategy.MEMORY -> if (memoryImageCache[key] == null) {
                 memoryImageCache.put(key, bitmap)
             }
-            CachingStrategy.NONE -> { }
+            else -> { }
         }
+        return result
     }
 
     override fun contains(request: Request): Boolean {

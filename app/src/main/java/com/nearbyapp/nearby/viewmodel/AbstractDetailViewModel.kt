@@ -63,10 +63,11 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
                 category = "Chiama",
                 image = R.drawable.ic_call_36dp.toString(),
                 standardAction = StandardAction.CALL_PHONE,
-                data = detail.formatted_phone_number
+                data = detail.formatted_phone_number,
+                span = 1
             )
         } catch (_: Exception) {
-            TextWrapper("Nessun numero di telefono", true)
+            TextWrapper("Nessun numero di telefono", true, 1)
         }
     }
 
@@ -76,10 +77,11 @@ abstract class AbstractDetailViewModel(application: Application): BaseViewModel(
                 category = "Apri il sito",
                 image = R.drawable.ic_website_36dp.toString(),
                 standardAction = StandardAction.OPEN_BROWSER,
-                data = detail.website
+                data = detail.website,
+                span = 1
             )
         } catch (_: Exception) {
-            TextWrapper("Nessun sito web", true)
+            TextWrapper("Nessun sito web", true, 1)
         }
     }
 

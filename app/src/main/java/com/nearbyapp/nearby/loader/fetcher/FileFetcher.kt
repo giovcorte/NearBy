@@ -22,7 +22,7 @@ class FileFetcher: ImageFetcher() {
             inputStream.close()
             val bitmap = decodeByteArray(
                 byteArrayOutputStream.toByteArray(),
-                400
+                request.requiredSize()
             )
             byteArrayOutputStream.close()
 

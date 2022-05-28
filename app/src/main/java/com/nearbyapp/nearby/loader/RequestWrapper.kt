@@ -1,18 +1,18 @@
 package com.nearbyapp.nearby.loader
 
-import com.nearbyapp.nearby.loader.cache.ImageCache
+import com.nearbyapp.nearby.loader.cache.IImageCache
 
 class RequestWrapper(
     private val source: String,
     private var tag: String? = null,
-    private var cache: ImageCache.CachingStrategy = ImageCache.CachingStrategy.ALL
+    private var cache: IImageCache.CachingStrategy
 ): Request {
 
     override fun asString(): String {
         return source
     }
 
-    override fun cachingStrategy(): ImageCache.CachingStrategy {
+    override fun cachingStrategy(): IImageCache.CachingStrategy {
         return cache
     }
 
@@ -20,11 +20,4 @@ class RequestWrapper(
         return tag ?: source
     }
 
-    fun setTag(tag: String?) {
-        this.tag = tag
-    }
-
-    fun setCache(cache: ImageCache.CachingStrategy) {
-        this.cache = cache
-    }
 }

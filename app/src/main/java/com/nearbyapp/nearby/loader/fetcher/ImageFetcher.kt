@@ -2,8 +2,8 @@ package com.nearbyapp.nearby.loader.fetcher
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.nearbyapp.nearby.loader.Request
 import com.nearbyapp.nearby.loader.ImageResult
+import com.nearbyapp.nearby.loader.Request
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -37,4 +37,5 @@ abstract class ImageFetcher: Fetcher {
         stream2.close()
         return bitmap
     }
+
 }

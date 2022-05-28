@@ -16,6 +16,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -64,7 +65,7 @@ object BindingMethods {
     ) {
         safeLet(view, data?.detail) {v, detail ->
             imageStorage.getImageFile(detail.storedThumbnail)?.let {
-                ImageLoader.get().load(it).into(v.image).run()
+                ImageLoader.get().load(it).intoView(v.image).run()
             }
             v.setOnClickListener {
                 clipboard.wrapper("savedDetails").put("id", detail.place_id)
@@ -164,15 +165,20 @@ object BindingMethods {
         safeLet(view?.image, data) { imageView, photo ->
             if (imageStorage.hasImageFile(photo.id)) {
                 val file = imageStorage.getImageFile(photo.id)
-                ImageLoader.get().load(file!!).into(imageView).run()
+                ImageLoader.get().load(file!!).intoView(imageView).run()
             } else {
                 val drawable = getDefaultLoadingDrawable(imageView.context)
-                ImageLoader.get().load(photo.link).into(imageView, drawable).run()
+                val errorDrawable = getDefaultErrorDrawable(imageView.context)
+                ImageLoader.get().load(photo.link).intoView(imageView, drawable, errorDrawable).run()
             }
         }
     }
 
-    fun getDefaultLoadingDrawable(context: Context) : Drawable {
+    private fun getDefaultErrorDrawable(context: Context): Drawable? {
+        return AppCompatResources.getDrawable(context, R.drawable.errorimage)
+    }
+
+    private fun getDefaultLoadingDrawable(context: Context) : Drawable {
         val drawable = CircularProgressDrawable(context)
         drawable.setColorSchemeColors(
             color(context, R.color.colorPrimary),
@@ -255,10 +261,11 @@ object BindingMethods {
     fun bindImage(@View view: ImageView?, @Data data: String?) {
         safeLet(view, data) { v, s ->
             if (Utils.isNumber(s)) {
-                ImageLoader.get().load(s.toInt()).into(v).run()
+                ImageLoader.get().load(s.toInt()).intoView(v).run()
             } else {
                 val drawable = getDefaultLoadingDrawable(v.context)
-                ImageLoader.get().load(s).into(v, drawable).run()
+                val errorDrawable = getDefaultErrorDrawable(v.context)
+                ImageLoader.get().load(s).intoView(v, drawable, errorDrawable).run()
             }
         }
     }
@@ -315,7 +322,8 @@ object BindingMethods {
         view?.image?.visibility = if (data?.thumbnail != null) VISIBLE else GONE
         safeLet(view, data?.thumbnail) { v, thumbnail ->
             val drawable = getDefaultLoadingDrawable(v.context)
-            ImageLoader.get().load(thumbnail).into(v.image, drawable).tag(data!!.place_id).run()
+            val errorDrawable = getDefaultErrorDrawable(v.context)
+            ImageLoader.get().tag(data!!.place_id).load(thumbnail).intoView(v.image, drawable, errorDrawable).run()
         }
         view?.setOnClickListener {
             clipboard.wrapper("detail").put("name", data!!.name)

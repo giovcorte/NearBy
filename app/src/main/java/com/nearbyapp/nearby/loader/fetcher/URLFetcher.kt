@@ -32,7 +32,7 @@ class URLFetcher: ImageFetcher() {
             // Decode byte[] to bitmap, but not from the cached file. Doing so permit us to get the bitmap also if memory is full
 
             // Decode byte[] to bitmap, but not from the cached file. Doing so permit us to get the bitmap also if memory is full
-            val bitmap = decodeByteArray(outputStreamUrl.toByteArray(), 300)
+            val bitmap = decodeByteArray(outputStreamUrl.toByteArray(), request.requiredSize())
             outputStreamUrl.close()
 
             return ImageResult.Success(bitmap!!)

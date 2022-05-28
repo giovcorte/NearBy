@@ -14,8 +14,7 @@ import com.nearbyapp.nearby.BaseActivity
 import com.nearbyapp.nearby.R
 import com.nearbyapp.nearby.components.ImageStorageHelper
 import com.nearbyapp.nearby.components.Status
-import com.nearbyapp.nearby.model.HomeCategory
-import com.nearbyapp.nearby.model.TextWrapper
+import com.nearbyapp.nearby.recycler.Spannable
 import com.nearbyapp.nearby.repository.DataSource
 import com.nearbyapp.nearby.viewmodel.ActivityViewModel
 import com.nearbyapp.nearby.viewmodel.DetailViewModel
@@ -116,7 +115,7 @@ class DetailFragment: ListFragment() {
         layoutManager.spanSizeLookup = object : SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
                 val item = adapter.getItem(position)
-                return if (item is HomeCategory || item is TextWrapper) 1 else 2
+                return if (item is Spannable) item.span() else 2
             }
         }
         return layoutManager

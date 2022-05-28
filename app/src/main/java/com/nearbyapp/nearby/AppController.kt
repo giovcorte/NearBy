@@ -31,6 +31,7 @@ class AppController: Application(), OnMapsSdkInitializedCallback {
         clipboard = Clipboard()
         preferencesManager = PreferencesManager(this.getSharedPreferences("NearByPreferences", Context.MODE_PRIVATE))
         imageLoader = ImageLoader(this)
+        imageLoader.logging(true)
         imageStorageHelper = ImageStorageHelper(getImageFolder(), imageLoader.cache())
         diskCache = DiskCache(File(this.cacheDir.path + File.separator + "appcache"), 1024 * 1024 * 200, 1)
         repository = RepositoryImpl(

@@ -8,12 +8,16 @@ interface IImageCache {
 
     suspend fun get(request: Request) : Bitmap?
 
-    suspend fun put(request: Request, bitmap: Bitmap)
+    suspend fun put(request: Request, bitmap: Bitmap) : Boolean
 
     suspend fun clear()
 
     suspend fun dumps(request: Request, file: File) : Boolean
 
     fun contains(request: Request) : Boolean
+
+    enum class CachingStrategy {
+        ALL, MEMORY, DISK, NONE, PREDEFINED
+    }
 
 }
